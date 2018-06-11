@@ -47,7 +47,7 @@
 		use the following maven command to generate a dependency tree and list all 
 		maven artifacts (libraries) that are available: $ mvn dependency:tree Check 
 		your IDE's documentation to display maven's dependency tree. -->
-	<dependencies><!-- OpenBIS -->
+	<dependencies>
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>openbis-client-lib</artifactId>
@@ -61,7 +61,6 @@
 			<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
-			<version>2.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.vaadin.addons</groupId>
