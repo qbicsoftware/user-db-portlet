@@ -17,3 +17,6 @@
 # Maven
 log/
 target/
+
+# Other
+.factorypath
