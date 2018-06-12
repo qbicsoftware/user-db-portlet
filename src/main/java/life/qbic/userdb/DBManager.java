@@ -551,10 +551,53 @@ public class DBManager {
         String groupName = rs.getString("group_name");
         String acronym = rs.getString("group_acronym");
         String organization = rs.getString("institute");
-        if (acronym == null || acronym.isEmpty())
-          res.put(groupName + " - " + organization, id);
-        else
-          res.put(groupName + " (" + acronym + ") - " + organization, id);
+
+        String resName = "";
+        boolean group = !(groupName == null || groupName.isEmpty());
+        boolean acr = !(acronym == null || acronym.isEmpty());
+        boolean org = !(organization == null || organization.isEmpty());
+
+        // no group
+        if (!group) {
+          // no acronym
+          if (!acr) {
+            // no org
+            if (!org) {
+              resName = "unknown";
+            } else {
+              resName = organization;
+            }
+            // acronym
+          } else {
+            // no org
+            if (!org) {
+              resName = acronym;
+            } else {
+              resName = acronym + " - " + organization;
+            }
+          }
+          // group
+        } else {
+          // no acronym
+          if (!acr) {
+            // no org
+            if (!org) {
+              resName = groupName;
+            } else {
+              resName = groupName + " - " + organization;
+            }
+            // acronym
+          } else {
+            // no org
+            if (!org) {
+              resName = groupName + " (" + acronym + ")";
+            } else {
+              resName = groupName + " (" + acronym + ") - " + organization;
+            }
+          }
+        }
+
+        res.put(resName, id);
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1116,8 +1159,8 @@ public class DBManager {
       Person p = personWithAffiliations.get(0);
       String institute = p.getOneAffiliationWithRole().getAffiliation();
 
-      details = String.format("%s %s \n%s \n \n%s \n%s \n", p.getFirstName(), p.getLastName(), institute,
-          p.getPhone(), p.getEmail());
+      details = String.format("%s %s \n%s \n \n%s \n%s \n", p.getFirstName(), p.getLastName(),
+          institute, p.getPhone(), p.getEmail());
       // TODO is address important?
     }
     return details;
