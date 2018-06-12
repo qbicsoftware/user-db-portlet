@@ -24,4 +24,5 @@ public class RegExHelper {
       "^(http://|https://)?(www.)?([a-zA-Z0-9]+).[a-zA-Z0-9]*-?[a-zA-Z0-9]*.[a-z]{3}.?([a-z]+)?/?$";
   public static final String VALID_USERNAME_REGEX = "[a-z]+[0-9a-z]*";
   public static final String VALID_NAME_REGEX = "[A-ZÖÄÜa-zöäüß]+[\\sA-ZÄÖÜa-zöäüß-]*";
+  //public static final String VALID_PHONE_NUMBER = "[\\+]?[[0-9]0?]+";
 }
