@@ -30,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import com.vaadin.data.Item;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.FileResource;
-import com.vaadin.server.VaadinService;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Upload;

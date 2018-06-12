@@ -96,6 +96,10 @@ public class PersonBatchReader {
     }
     reader.close();
 
+    if(data.isEmpty()) {
+      error = "File is empty.";
+      return false;
+    }
     String[] header = data.get(0);
     data.remove(0);
 
