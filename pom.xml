@@ -50,15 +50,20 @@
 	<dependencies>
 		<dependency>
 			<groupId>life.qbic</groupId>
+			<artifactId>portal-utils-lib</artifactId>
+			<version>1.1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>life.qbic</groupId>
 			<artifactId>openbis-client-lib</artifactId>
-			<version>1.1.4-SNAPSHOT</version>
+			<version>1.1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>data-model-lib</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
-			</dependency>
-			<dependency>
+			<version>0.1.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
 		</dependency>
