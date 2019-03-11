@@ -176,9 +176,13 @@ public class UserDBPortletUI extends QBiCPortletUI {
       MultiAffiliationTab multiAffilTab =
           new MultiAffiliationTab(personMap, affiMap, affiliationRoles);
       options.addTab(multiAffilTab, "Additional Person-Affiliations");
+      
       if (!admin) {
-        options.getTab(3).setEnabled(false);
-        options.getTab(4).setEnabled(false);
+        options.getTab(multiAffilTab).setEnabled(false);
+        options.getTab(vipTab).setEnabled(false);
+
+//        options.getTab(3).setEnabled(false);
+//        options.getTab(4).setEnabled(false);
       }
 
       String userID = "";
@@ -212,7 +216,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
       ProjectView projectView = new ProjectView(userProjects.values(), openbis, personMap);
       options.addTab(projectView, "Projects");
-      options.getTab(5).setEnabled(!userProjects.isEmpty());
+      options.getTab(projectView).setEnabled(!userProjects.isEmpty());
 
       initPortletToDBFunctionality(addAffilTab, addUserTab, batchTab, multiAffilTab, vipTab,
           searchView, projectView);
