@@ -8,7 +8,7 @@
 
 	<portlet>
 		<description>User DB Tools Portlet enables users to add people and affiliations to the SQL user database.</description>
-		<portlet-name>user-db-portlet</portlet-name>
+		<portlet-name>${project.artifactId}</portlet-name>
 		<display-name>User Database Portlet</display-name>
 
 		<portlet-class>com.vaadin.server.VaadinPortlet</portlet-class>

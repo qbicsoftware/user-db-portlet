@@ -40,7 +40,7 @@ deploy:
   # artifact will be installed in our testing instance if it is a .war file
 - skip_cleanup: true
   provider: script
-  script: mvn --quiet --activate-profiles development-build,!release-build --settings .travis.settings.xml deploy
+  script: echo "development deployment" && mvn --quiet --activate-profiles development-build,!release-build --settings .travis.settings.xml deploy
   on:
     branch: development
     condition: '"$TRAVIS_EVENT_TYPE" = "push"'
@@ -49,10 +49,10 @@ deploy:
   # artifact will be installed in our testing instance if it is a .war file
 - skip_cleanup: true
   provider: script
-  script: mvn --quiet --activate-profiles !development-build,release-build --settings .travis.settings.xml deploy
+  script: echo "master deployment" && mvn --quiet --activate-profiles !development-build,release-build --settings .travis.settings.xml deploy
   on:
     branch: master
-    tags: true
+    tags: '"$TRAVIS_EVENT_TYPE" = "push"'
 
 # change according to your needs, but we recommend to deactivate email notifications
 # for now, we configured Travis to send a notification to the #travis-ci channel 
