@@ -44,10 +44,11 @@ import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.openbis.openbisclient.OpenBisClientMock;
 import life.qbic.portal.Styles;
 import life.qbic.portal.Styles.NotificationType;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.userdb.Config;
 import life.qbic.userdb.DBManager;
-import life.qbic.userdb.config.ConfigurationManagerFactory;
 import life.qbic.userdb.views.AffiliationInput;
 import life.qbic.userdb.views.AffiliationVIPTab;
 import life.qbic.userdb.views.MultiAffiliationTab;
@@ -204,7 +205,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
         String projectID = p.getIdentifier();
         String code = p.getCode();
         if (allProjects.get(projectID) == null)
-          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, "", -1));
+          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, "", "", -1));
         else
           userProjects.put(projectID, allProjects.get(projectID));
       }
@@ -572,10 +573,10 @@ public class UserDBPortletUI extends QBiCPortletUI {
   }
 
   private Config readConfig() {
-    life.qbic.userdb.config.ConfigurationManager c = ConfigurationManagerFactory.getInstance();
+    ConfigurationManager c = ConfigurationManagerFactory.getInstance();
 
     return new Config(c.getMysqlHost(), c.getMysqlPort(), c.getMysqlDB(), c.getMysqlUser(),
-        c.getMysqlPass(), c.getDBInputUserGrps(), c.getDBInputAdminGrps(), c.getDataSourceUrl(),
+        c.getMysqlPass(), c.getUserDBInputUserGrps(), c.getUserDBInputAdminGrps(), c.getDataSourceUrl(),
         c.getDataSourceUser(), c.getDataSourcePassword(), c.getTmpFolder());
   }
 

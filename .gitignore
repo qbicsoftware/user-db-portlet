@@ -1,3 +1,4 @@
+
 # Eclipse
 .classpath
 .project
@@ -15,8 +16,13 @@
 .DS_Store
  
 # Maven
-log/
 target/
 
+# Some of our applications generate logs, which should be ignored by git
+logs/
+
 # Other
-.factorypath
+**/.factorypath
+
+# compiled Vaadin widgetsets
+src/main/webapp/VAADIN/widgetsets

@@ -69,7 +69,7 @@ public class DBManager {
       statement = conn.prepareStatement(sql);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        System.out.println(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
+        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
             + rs.getString(3) + " " + rs.getString(4) + " " + rs.getString(5) + " "
             + rs.getString(6) + " " + rs.getString(7) + " " + rs.getString(8) + " "
             + rs.getString(9) + " " + rs.getString(10) + " " + rs.getString(11));
@@ -507,7 +507,7 @@ public class DBManager {
       statement = conn.prepareStatement(sql);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        System.out.println(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
+        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
             + rs.getString(3) + " " + rs.getString(4) + " " + rs.getString(5) + " "
             + rs.getString(6) + " " + rs.getString(7) + " " + rs.getString(8) + " "
             + rs.getString(9) + " " + rs.getString(10) + " " + rs.getString(11));
@@ -529,7 +529,6 @@ public class DBManager {
       while (rs.next()) {
         int pi_id = rs.getInt("pi_id");
         String first = rs.getString("project_code");
-        System.out.println(pi_id + first);
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -811,7 +810,7 @@ public class DBManager {
     ResultSet rs = md.getTables(null, null, "%", null);
     while (rs.next()) {
       String table = rs.getString(3);
-      System.out.println(table);
+      logger.info(table);
       String sql = "SELECT * FROM " + table;
       PreparedStatement statement = null;
       try {
@@ -820,7 +819,7 @@ public class DBManager {
         ResultSetMetaData metaData = r.getMetaData();
         int count = metaData.getColumnCount(); // number of column
         for (int i = 1; i <= count; i++) {
-          System.out.println("col: " + metaData.getColumnLabel(i));
+          logger.info("col: " + metaData.getColumnLabel(i));
         }
       } catch (Exception e) {
         // TODO: handle exception
@@ -1472,7 +1471,7 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("project_id");
           String shortName = rs.getString("short_title");
-          res.put(projectID, new ProjectInfo(space, project, shortName, id));
+          res.put(projectID, new ProjectInfo(space, project, "", shortName, id));
         }
         // setting person for different role rows
         ProjectInfo info = res.get(projectID);
@@ -1512,7 +1511,7 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("id");
           String shortName = rs.getString("short_title");
-          res.put(projID, new ProjectInfo(space, project, shortName, id));
+          res.put(projID, new ProjectInfo(space, project, "", shortName, id));
         } catch (Exception e) {
           logger.error("Could not parse project from openbis identifier " + projID
               + ". It seems this database entry is incorrect. Ignoring project.");
@@ -1703,6 +1702,7 @@ public class DBManager {
       statement.setInt(1, id);
       statement.setString(2, role);
       statement.executeQuery();
+      logger.info("Successful.");
     } catch (SQLException e) {
       logger.error("SQL operation unsuccessful: " + e.getMessage());
       e.printStackTrace();

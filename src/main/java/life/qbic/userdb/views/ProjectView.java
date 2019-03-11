@@ -153,7 +153,7 @@ public class ProjectView extends VerticalLayout {
         if (item != null) {
           projectInfo.setVisible(true);
           projectInfo.setCaption(projectMap.get(item).getProjectCode());
-          System.out.println(projectMap.get(item));
+          logger.info("Selected project: "+projectMap.get(item));
           altName.setValue(projectMap.get(item).getSecondaryName());
           investigator.setValue(projectMap.get(item).getInvestigator());
           contact.setValue(projectMap.get(item).getContact());
@@ -173,7 +173,7 @@ public class ProjectView extends VerticalLayout {
     ProjectInfo p = projectMap.get(code);
     String oldName = p.getSecondaryName();
     String newName = altName.getValue();
-    
+
     String oldPI = p.getInvestigator();
     Object newPI = investigator.getValue();
     boolean updatePI = oldPI != newPI;
@@ -195,7 +195,7 @@ public class ProjectView extends VerticalLayout {
     boolean update = !oldName.equals(newName) || updatePI || updateContact || updateManager;
     if (update) {
       // initProjectInfos(projectMap.values());
-      ProjectInfo newInfo = new ProjectInfo(p.getSpace(), code, newName, p.getProjectID());
+      ProjectInfo newInfo = new ProjectInfo(p.getSpace(), code, p.getDescription(), newName, p.getProjectID());
       if (newPI != null)
         newInfo.setInvestigator(newPI.toString());
       else
