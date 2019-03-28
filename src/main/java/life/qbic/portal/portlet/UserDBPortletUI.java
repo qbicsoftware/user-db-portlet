@@ -1,14 +1,14 @@
 package life.qbic.portal.portlet;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
-
-import javax.portlet.PortletContext;
-import javax.portlet.PortletSession;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -23,7 +23,6 @@ import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.WrappedPortletSession;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Label;
@@ -41,11 +40,11 @@ import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.openbis.openbisclient.IOpenBisClient;
 import life.qbic.openbis.openbisclient.OpenBisClient;
-import life.qbic.openbis.openbisclient.OpenBisClientMock;
 import life.qbic.portal.Styles;
 import life.qbic.portal.Styles.NotificationType;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.LiferayIndependentConfigurationManager;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.userdb.Config;
 import life.qbic.userdb.DBManager;
@@ -70,15 +69,16 @@ public class UserDBPortletUI extends QBiCPortletUI {
   private DBManager dbControl;
   private Map<String, Integer> affiMap;
   private Map<String, Integer> personMap;
-
+  private Map<String, ProjectInfo> projectMap;
+  
   private TabSheet options;
 
+  private ConfigurationManager manager;
   private Config config;
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean testMode = false;
-  private final boolean development = false;
+  private final boolean development = true;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
@@ -88,30 +88,68 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
     options = new TabSheet();
 
-    this.config = readConfig();
-    tmpFolder = config.getTmpFolder();
-    // LDAPConfig ldapConfig = readLdapConfig();// TODO
+    String userID = "";
+    boolean success = true;
+    if (PortalUtils.isLiferayPortlet()) {
+      // read in the configuration file
+      manager = ConfigurationManagerFactory.getInstance();
 
-    // establish connection to the OpenBIS API
-    if (!development || !testMode) {
-      try {
-        this.openbis = new OpenBisClient(config.getOpenbisUser(), config.getOpenbisPass(),
-            config.getOpenbisURL());
-        this.openbis.login();
-      } catch (Exception e) {
-        // success = false;
-        // logger.error(
-        // "User \"" + userID + "\" could not connect to openBIS and has been informed of this.");
-        // layout.addComponent(new Label(
-        // "Data Management System could not be reached. Please try again later or contact us."));
+      logger.info("User DB portlet is running on Liferay and user is logged in.");
+      userID = PortalUtils.getUser().getScreenName();
+    } else {
+      if (development) {
+
+        // Properties portletConfig = new Properties();
+        // InputStream input = null;
+        //
+        // input = LiferayIndependentConfigurationManager.class.getClassLoader()
+        // .getResourceAsStream("local.properties");
+        // if (input == null) {
+        // System.out.println("Sorry, unable to find " + "local.properties");
+        // }
+        //
+        // // load a properties file from class path, inside static method
+        // try {
+        // portletConfig.load(input);
+        // System.out.println(portletConfig.keySet());
+        // } catch (IOException e) {
+        // // TODO Auto-generated catch block
+        // e.printStackTrace();
+        // }
+
+        LiferayIndependentConfigurationManager.Instance.init("local.properties");
+        manager = LiferayIndependentConfigurationManager.Instance;
+        logger.warn("Checks for local dev version successful. User is granted admin status.");
+        userID = "admin";
+        // isAdmin = true;
+      } else {
+        success = false;
+        logger.info(
+            "User \"" + userID + "\" not found. Probably running on Liferay and not logged in.");
+        layout.addComponent(new Label("User not found. Are you logged in?"));
       }
     }
-    if (development && testMode) {
-      logger.error("No connection to openBIS. Trying mock version for testing.");
-      this.openbis = new OpenBisClientMock("", "", "");
+    // establish connection to the OpenBIS API
+    try {
+      logger.debug("trying to connect to openbis");
+      this.openbis = new OpenBisClient(manager.getDataSourceUser(), manager.getDataSourcePassword(),
+          manager.getDataSourceUrl());
+      this.openbis.login();
+    } catch (Exception e) {
+      success = false;
+      logger.error(
+          "User \"" + userID + "\" could not connect to openBIS and has been informed of this.");
       layout.addComponent(new Label(
-          "openBIS could not be reached. Resuming with mock version. Some options might be non-functional. Reload to retry."));
+          "Data Management System could not be reached. Please try again later or contact us."));
     }
+    if (success) {
+      config = new Config(manager.getMysqlHost(), manager.getMysqlPort(), manager.getMysqlDB(),
+          manager.getMysqlUser(), manager.getMysqlPass(), manager.getUserDBInputUserGrps(),
+          manager.getUserDBInputAdminGrps(), manager.getDataSourceUrl(),
+          manager.getDataSourceUser(), manager.getDataSourcePassword(), manager.getTmpFolder());
+    }
+
+    // LDAPConfig ldapConfig = readLdapConfig();// TODO
 
     dbControl = new DBManager(config);
 
@@ -176,13 +214,13 @@ public class UserDBPortletUI extends QBiCPortletUI {
       MultiAffiliationTab multiAffilTab =
           new MultiAffiliationTab(personMap, affiMap, affiliationRoles);
       options.addTab(multiAffilTab, "Additional Person-Affiliations");
-      
+
       if (!admin) {
         options.getTab(multiAffilTab).setEnabled(false);
         options.getTab(vipTab).setEnabled(false);
 
-//        options.getTab(3).setEnabled(false);
-//        options.getTab(4).setEnabled(false);
+        // options.getTab(3).setEnabled(false);
+        // options.getTab(4).setEnabled(false);
       }
 
       String userID = "";
@@ -198,12 +236,10 @@ public class UserDBPortletUI extends QBiCPortletUI {
       Map<String, ProjectInfo> userProjects = new HashMap<String, ProjectInfo>();
 
       List<Project> openbisProjects = new ArrayList<Project>();
-      if (testMode) {
-        openbisProjects = openbis.listProjects();
-      } else {
-        openbisProjects = openbis.getOpenbisInfoService()
-            .listProjectsOnBehalfOfUser(openbis.getSessionToken(), userID);
-      }
+
+      openbisProjects = openbis.getOpenbisInfoService()
+          .listProjectsOnBehalfOfUser(openbis.getSessionToken(), userID);
+
       Map<String, ProjectInfo> allProjects = dbControl.getProjectMap();
       for (Project p : openbisProjects) {
         String projectID = p.getIdentifier();
@@ -214,7 +250,12 @@ public class UserDBPortletUI extends QBiCPortletUI {
           userProjects.put(projectID, allProjects.get(projectID));
       }
 
-      ProjectView projectView = new ProjectView(userProjects.values(), openbis, personMap);
+      projectMap = new HashMap<>();
+      for (ProjectInfo p : userProjects.values()) {
+        String code = p.getProjectCode();
+        projectMap.put(code, p);
+      }
+      ProjectView projectView = new ProjectView(projectMap, personMap);
       options.addTab(projectView, "Projects");
       options.getTab(projectView).setEnabled(!userProjects.isEmpty());
 
@@ -348,6 +389,19 @@ public class UserDBPortletUI extends QBiCPortletUI {
           }
           projects.setCollaboratorsOfProject(collaborators);
         }
+        
+        Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
+        Person manager = getPersonOrNull(projectMap.get(item).getManager());
+        Person contact = getPersonOrNull(projectMap.get(item).getContact());
+
+        projects.handleProjectValueChange(item, investigator, contact, manager);
+      }
+
+      private Person getPersonOrNull(String name) {
+        if(personMap.get(name)!=null) {
+          return dbControl.getPersonWithAffiliations(personMap.get(name)).get(0);
+        }
+        return null;
       }
     });
 
@@ -575,22 +629,14 @@ public class UserDBPortletUI extends QBiCPortletUI {
   private void commitError(String reason) {
     Styles.notification("There has been an error.", reason, NotificationType.ERROR);
   }
-
-  private Config readConfig() {
-    ConfigurationManager c = ConfigurationManagerFactory.getInstance();
-
-    return new Config(c.getMysqlHost(), c.getMysqlPort(), c.getMysqlDB(), c.getMysqlUser(),
-        c.getMysqlPass(), c.getUserDBInputUserGrps(), c.getUserDBInputAdminGrps(), c.getDataSourceUrl(),
-        c.getDataSourceUser(), c.getDataSourcePassword(), c.getTmpFolder());
-  }
-
-  private String getPortletContextName(VaadinRequest request) {
-    WrappedPortletSession wrappedPortletSession =
-        (WrappedPortletSession) request.getWrappedSession();
-    PortletSession portletSession = wrappedPortletSession.getPortletSession();
-
-    final PortletContext context = portletSession.getPortletContext();
-    final String portletContextName = context.getPortletContextName();
-    return portletContextName;
-  }
+  //
+  // private String getPortletContextName(VaadinRequest request) {
+  // WrappedPortletSession wrappedPortletSession =
+  // (WrappedPortletSession) request.getWrappedSession();
+  // PortletSession portletSession = wrappedPortletSession.getPortletSession();
+  //
+  // final PortletContext context = portletSession.getPortletContext();
+  // final String portletContextName = context.getPortletContextName();
+  // return portletContextName;
+  // }
 }
