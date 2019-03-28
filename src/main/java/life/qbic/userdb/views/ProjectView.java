@@ -15,8 +15,12 @@
  *******************************************************************************/
 package life.qbic.userdb.views;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tepi.filtertable.FilterTable;
 
-import com.vaadin.data.Property.ValueChangeEvent;
-import com.vaadin.data.Property.ValueChangeListener;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
@@ -35,9 +39,10 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
+import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
+import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.projects.ProjectInfo;
-import life.qbic.openbis.openbisclient.IOpenBisClient;
 import life.qbic.portal.Styles;
 import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
@@ -50,24 +55,28 @@ public class ProjectView extends VerticalLayout {
   private Map<String, Integer> personMap;
 
   private TextField altName;
-  private ComboBox investigator;
-  private ComboBox contact;
-  private ComboBox manager;
+  private ComboBox investigatorBox;
+  private ComboBox contactBox;
+  private ComboBox managerBox;
   private Button submitInfo;
+  private Button downloadProjectInfo;
+  private FileDownloader tsvDL;
 
   private Table projectPersons;
   private Button submitPersons;
   private Map<String, CollaboratorWithResponsibility> experimentMap;
 
-  public ProjectView(Collection<ProjectInfo> collection, IOpenBisClient openbis,
-      Map<String, Integer> personMap) {
+  private VerticalLayout projectInfoLayout;
+
+  public ProjectView(Map<String, ProjectInfo> projectMap, Map<String, Integer> personMap) {
     setSpacing(true);
     setMargin(true);
 
     this.personMap = personMap;
+    this.projectMap = projectMap;
 
     projectTable = new FilterTable("Projects");
-    projectTable.setPageLength(Math.min(15, collection.size()));
+    projectTable.setPageLength(Math.min(15, projectMap.size()));
     projectTable.setStyleName(ValoTheme.TABLE_SMALL);
     projectTable.addContainerProperty("Sub-Project", String.class, null);
     projectTable.addContainerProperty("Short Title", String.class, null);
@@ -84,9 +93,13 @@ public class ProjectView extends VerticalLayout {
 
     projectTable.setImmediate(true);
 
-    initProjectInfos(collection);
+    downloadProjectInfo = new Button("Download Project Information");
+    downloadProjectInfo.setVisible(false);
+    addComponent(downloadProjectInfo);
+    initProjectInfos();
 
     projectPersons = new Table("Experiment Collaborators (optional)");
+    projectPersons.setVisible(false);
     projectPersons.setStyleName(ValoTheme.TABLE_SMALL);
     projectPersons.addContainerProperty("Name", ComboBox.class, null);
     projectPersons.addContainerProperty("Experiment", String.class, null);
@@ -99,12 +112,10 @@ public class ProjectView extends VerticalLayout {
     addComponent(submitPersons);
   }
 
-  public void initProjectInfos(Collection<ProjectInfo> collection) {
-    projectMap = new HashMap<String, ProjectInfo>();
+  public void initProjectInfos() {
     projectTable.removeAllItems();
-    for (ProjectInfo p : collection) {
-      String code = p.getProjectCode();
-      projectMap.put(code, p);
+    for (String code : projectMap.keySet()) {
+      ProjectInfo p = projectMap.get(code);
       List<Object> row = new ArrayList<Object>();
       row.add(code);
       row.add(p.getSecondaryName());
@@ -116,51 +127,178 @@ public class ProjectView extends VerticalLayout {
     // sort ascending by Project ID
     // projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
 
-    VerticalLayout projectInfo = new VerticalLayout();
-    projectInfo.setVisible(false);
+    projectInfoLayout = new VerticalLayout();
+    projectInfoLayout.setVisible(false);
     altName = new TextField("Short Title");
     altName.setWidth("300px");
     altName.setStyleName(Styles.fieldTheme);
-    investigator = new ComboBox("Principal Investigator", personMap.keySet());
-    investigator.setStyleName(Styles.boxTheme);
-    investigator.setFilteringMode(FilteringMode.CONTAINS);
-    contact = new ComboBox("Contact Person", personMap.keySet());
-    contact.setStyleName(Styles.boxTheme);
-    contact.setFilteringMode(FilteringMode.CONTAINS);
-    manager = new ComboBox("Project Manager", personMap.keySet());
-    manager.setStyleName(Styles.boxTheme);
-    manager.setFilteringMode(FilteringMode.CONTAINS);
+    investigatorBox = new ComboBox("Principal Investigator", personMap.keySet());
+    investigatorBox.setStyleName(Styles.boxTheme);
+    investigatorBox.setFilteringMode(FilteringMode.CONTAINS);
+    contactBox = new ComboBox("Contact Person", personMap.keySet());
+    contactBox.setStyleName(Styles.boxTheme);
+    contactBox.setFilteringMode(FilteringMode.CONTAINS);
+    managerBox = new ComboBox("Project Manager", personMap.keySet());
+    managerBox.setStyleName(Styles.boxTheme);
+    managerBox.setFilteringMode(FilteringMode.CONTAINS);
     submitInfo = new Button("Change Project Information");
-    projectInfo.addComponent(altName);
-    projectInfo.addComponent(investigator);
-    projectInfo.addComponent(contact);
-    projectInfo.addComponent(manager);
-    projectInfo.addComponent(submitInfo);
-    projectInfo.setSpacing(true);
-    addComponent(projectInfo);
+    projectInfoLayout.addComponent(altName);
+    projectInfoLayout.addComponent(investigatorBox);
+    projectInfoLayout.addComponent(contactBox);
+    projectInfoLayout.addComponent(managerBox);
+    projectInfoLayout.addComponent(submitInfo);
+    projectInfoLayout.setSpacing(true);
+    addComponent(projectInfoLayout);
 
-    projectTable.addValueChangeListener(new ValueChangeListener() {
+    // projectTable.addValueChangeListener(new ValueChangeListener() {
+    //
+    // /**
+    // *
+    // */
+    // private static final long serialVersionUID = -3035074733968253748L;
+    //
+    // @Override
+    // public void valueChange(ValueChangeEvent event) {
+    // projectInfo.setVisible(false);
+    // downloadProjectInfo.setVisible(false);
+    // Object item = projectTable.getValue();
+    // if (item != null) {
+    // String secondaryName = projectMap.get(item).getSecondaryName();
+    // String invName = projectMap.get(item).getInvestigator();
+    // String contactName = projectMap.get(item).getContact();
+    // String managerName = projectMap.get(item).getManager();
+    //
+    // projectInfo.setCaption(projectMap.get(item).getProjectCode());
+    // logger.info("Selected project: " + projectMap.get(item));
+    // altName.setValue(secondaryName);
+    // investigator.setValue(invName);
+    // contact.setValue(contactName);
+    // manager.setValue(managerName);
+    //
+    // try {
+    // armDownloadButton(item);
+    // downloadProjectInfo.setVisible(true);
+    // } catch (FileNotFoundException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // } catch (UnsupportedEncodingException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    // projectInfo.setVisible(true);
+    // }
+    // }
+    // });
+  }
 
-      /**
-       * 
-       */
-      private static final long serialVersionUID = -3035074733968253748L;
+  /**
+   * Creates a tab separated values file of the available project information
+   * 
+   * @param manager
+   * @param contact
+   * @param PI
+   * 
+   * @param managerName
+   * @param contactName
+   * @param invName
+   * @param space
+   * @param secondaryName
+   * @param string
+   * 
+   * @return
+   * @throws FileNotFoundException
+   * @throws UnsupportedEncodingException
+   */
+  private String createTSV(String subProject, Person PI, Person contact, Person manager)
+      throws FileNotFoundException, UnsupportedEncodingException {
 
+    String secondaryName = projectMap.get(subProject).getSecondaryName();
+    secondaryName = secondaryName == null ? "" : secondaryName;
+    String space = projectMap.get(subProject).getSpace();
+
+    List<String> header = new ArrayList<>(
+        Arrays.asList("Sub-Project", "Short Title", "Project", "Principal Investigator",
+            "PI Affiliation", "PI Adress", "Contact Person", "Contact Affiliation",
+            "Contact Adress", "Project Manager", "Manager Affiliation", "Manager Adress"));
+    List<String> data = new ArrayList<>(Arrays.asList(subProject, secondaryName, space));
+
+    addPersonInfos(data, PI);
+    addPersonInfos(data, contact);
+    addPersonInfos(data, manager);
+
+    // only filled entries are listed here and no address for now
+    for (CollaboratorWithResponsibility col : experimentMap.values()) {
+      String name = col.getPerson();
+      if (name != null && !name.isEmpty()) {
+        header.add(col.getOpenbisCode() + " Experiment Collaborator");
+        header.add(col.getOpenbisCode() + " Experiment Role");
+        data.add(name);
+        data.add(col.getRole());
+      }
+    }
+
+    String headerLine = String.join("\t", header);
+    String dataLine = String.join("\t", data);
+
+    return headerLine + "\n" + dataLine + "\n";
+  }
+
+  private void addPersonInfos(List<String> data, Person p) {
+    if (p != null) {
+      data.add(getFullName(p));
+      String affi = p.getAffiliations().get(0).getGroupName();
+      if (affi != null) {
+        data.add(affi);
+      }
+      data.add(generatePersonAdress(p));
+    } else {
+      data.add("");
+      data.add("");
+      data.add("");
+    }
+  }
+
+  private String getFullName(Person person) {
+    return person.getFirstName() + " " + person.getLastName();
+  }
+
+  private String generatePersonAdress(Person person) {
+    Affiliation af = person.getAffiliations().get(0);
+    StringBuilder b = new StringBuilder(af.getStreet());
+    b.append(" ");
+    b.append(af.getZipCode());
+    b.append(" ");
+    b.append(af.getCountry());
+    return b.toString();
+  }
+
+  // TODO move this to utils lib
+  private StreamResource getTSVStream(final String content, String name) {
+    StreamResource resource = new StreamResource(new StreamResource.StreamSource() {
       @Override
-      public void valueChange(ValueChangeEvent event) {
-        projectInfo.setVisible(false);
-        Object item = projectTable.getValue();
-        if (item != null) {
-          projectInfo.setVisible(true);
-          projectInfo.setCaption(projectMap.get(item).getProjectCode());
-          logger.info("Selected project: "+projectMap.get(item));
-          altName.setValue(projectMap.get(item).getSecondaryName());
-          investigator.setValue(projectMap.get(item).getInvestigator());
-          contact.setValue(projectMap.get(item).getContact());
-          manager.setValue(projectMap.get(item).getManager());
+      public InputStream getStream() {
+        try {
+          InputStream is = new ByteArrayInputStream(content.getBytes());
+          return is;
+        } catch (Exception e) {
+          e.printStackTrace();
+          return null;
         }
       }
-    });
+    }, String.format("%s.tsv", name));
+    return resource;
+  }
+
+  private void armDownloadButton(Object item, Person PI, Person contact, Person manager)
+      throws FileNotFoundException, UnsupportedEncodingException {
+    String subProject = item.toString();
+    StreamResource tsvStream =
+        getTSVStream(createTSV(subProject, PI, contact, manager), subProject + "_summary");
+    if (tsvDL == null) {
+      tsvDL = new FileDownloader(tsvStream);
+      tsvDL.extend(downloadProjectInfo);
+    } else
+      tsvDL.setFileDownloadResource(tsvStream);
   }
 
   /**
@@ -175,27 +313,28 @@ public class ProjectView extends VerticalLayout {
     String newName = altName.getValue();
 
     String oldPI = p.getInvestigator();
-    Object newPI = investigator.getValue();
+    Object newPI = investigatorBox.getValue();
     boolean updatePI = oldPI != newPI;
     if (oldPI != null)
       updatePI = !oldPI.equals(newPI);
 
     String oldContact = p.getContact();
-    Object newContact = contact.getValue();
+    Object newContact = contactBox.getValue();
     boolean updateContact = oldContact != newContact;
     if (oldContact != null)
       updateContact = !oldContact.equals(newContact);
 
     String oldManager = p.getManager();
-    Object newManager = manager.getValue();
+    Object newManager = managerBox.getValue();
     boolean updateManager = oldManager != newManager;
     if (oldManager != null)
       updateManager = !oldManager.equals(newManager);
-    
+
     boolean update = !oldName.equals(newName) || updatePI || updateContact || updateManager;
     if (update) {
       // initProjectInfos(projectMap.values());
-      ProjectInfo newInfo = new ProjectInfo(p.getSpace(), code, p.getDescription(), newName, p.getProjectID());
+      ProjectInfo newInfo =
+          new ProjectInfo(p.getSpace(), code, p.getDescription(), newName, p.getProjectID());
       if (newPI != null)
         newInfo.setInvestigator(newPI.toString());
       else
@@ -234,6 +373,7 @@ public class ProjectView extends VerticalLayout {
   public void setCollaboratorsOfProject(List<CollaboratorWithResponsibility> collaborators) {
     experimentMap = new HashMap<String, CollaboratorWithResponsibility>();
     projectPersons.removeAllItems();
+    projectPersons.setVisible(false);
 
     for (CollaboratorWithResponsibility c : collaborators) {
       String code = c.getOpenbisCode();
@@ -248,6 +388,7 @@ public class ProjectView extends VerticalLayout {
       row.add(c.getOpenbisCode());
       row.add(c.getOpenbisType());
       projectPersons.addItem(row.toArray(new Object[row.size()]), code);
+      projectPersons.setVisible(true);
     }
 
     // sort ascending by Experiment ID
@@ -291,6 +432,32 @@ public class ProjectView extends VerticalLayout {
     projectTable.addItem(row.toArray(new Object[row.size()]), code);
     // sort ascending by Project ID
     projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
+  }
+
+  public void handleProjectValueChange(Object item, Person PI, Person contact, Person manager) {
+    projectInfoLayout.setVisible(false);
+    downloadProjectInfo.setVisible(false);
+    if (item != null) {
+      String secondaryName = projectMap.get(item).getSecondaryName();
+
+      projectInfoLayout.setCaption(projectMap.get(item).getProjectCode());
+      logger.info("Selected project: " + projectMap.get(item));
+      altName.setValue(secondaryName);
+      investigatorBox.setValue(projectMap.get(item).getInvestigator());
+      contactBox.setValue(projectMap.get(item).getContact());
+      managerBox.setValue(projectMap.get(item).getManager());
+      try {
+        armDownloadButton(item, PI, contact, manager);
+        downloadProjectInfo.setVisible(true);
+      } catch (FileNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      } catch (UnsupportedEncodingException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      projectInfoLayout.setVisible(true);
+    }
   }
 
 }
