@@ -1,13 +1,10 @@
 package life.qbic.portal.portlet;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +41,6 @@ import life.qbic.portal.Styles;
 import life.qbic.portal.Styles.NotificationType;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
-import life.qbic.portal.utils.LiferayIndependentConfigurationManager;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.userdb.Config;
 import life.qbic.userdb.DBManager;
@@ -78,7 +74,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean development = true;
+  private final boolean development = false;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
@@ -98,27 +94,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
       userID = PortalUtils.getUser().getScreenName();
     } else {
       if (development) {
-
-        // Properties portletConfig = new Properties();
-        // InputStream input = null;
-        //
-        // input = LiferayIndependentConfigurationManager.class.getClassLoader()
-        // .getResourceAsStream("local.properties");
-        // if (input == null) {
-        // System.out.println("Sorry, unable to find " + "local.properties");
-        // }
-        //
-        // // load a properties file from class path, inside static method
-        // try {
-        // portletConfig.load(input);
-        // System.out.println(portletConfig.keySet());
-        // } catch (IOException e) {
-        // // TODO Auto-generated catch block
-        // e.printStackTrace();
-        // }
-
-        LiferayIndependentConfigurationManager.Instance.init("local.properties");
-        manager = LiferayIndependentConfigurationManager.Instance;
         logger.warn("Checks for local dev version successful. User is granted admin status.");
         userID = "admin";
         // isAdmin = true;
@@ -155,10 +130,25 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
     initTabs();
 
+    Button timeout = new Button("test timeout");
+    timeout.addClickListener(new Button.ClickListener() {
+      
+      @Override
+      public void buttonClick(ClickEvent event) {
+        int time = 90000;
+        try {
+          Thread.sleep(time);
+        } catch (InterruptedException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    });
+    layout.addComponent(timeout);
+    
     layout.addComponent(options);
     return layout;
   }
-
 
   private void initTabs() {
     boolean admin = isAdmin();
@@ -174,9 +164,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       options.addTab(rightsMissingTab, "Information");
       options.setSelectedTab(rightsMissingTab);
       options.setEnabled(false);
-
     } else {
-
       affiMap = dbControl.getAffiliationMap();
       personMap = dbControl.getPersonMap();
       Set<String> instituteNames = dbControl.getInstituteNames();
