@@ -992,14 +992,14 @@ public class DBManager {
       Set<String> streets = new HashSet<String>();
       Set<String> orgs = new HashSet<String>();
       Set<String> faculties = new HashSet<String>();
-      Set<Integer> zips = new HashSet<Integer>();
+      Set<String> zips = new HashSet<String>();
       Set<String> cities = new HashSet<String>();
       Set<String> countries = new HashSet<String>();
       while (rs.next()) {
         faculties.add(rs.getString("faculty"));
         orgs.add(rs.getString("umbrella_organization"));
         streets.add(rs.getString("street"));
-        zips.add(rs.getInt("zip_code"));
+        zips.add(rs.getString("zip_code"));
         countries.add(rs.getString("country"));
         cities.add(rs.getString("city"));
         institute = rs.getString("institute");
@@ -1019,7 +1019,7 @@ public class DBManager {
       if (countries.size() == 1)
         country = countries.iterator().next();
       if (zips.size() == 1)
-        zipCode = Integer.toString(zips.iterator().next());
+        zipCode = zips.iterator().next();
       if (cities.size() == 1)
         city = cities.iterator().next();
       res = new Affiliation(-1, "", "", organization, institute, faculty, "", "", street, zipCode,
