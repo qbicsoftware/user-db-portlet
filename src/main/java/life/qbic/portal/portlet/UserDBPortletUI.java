@@ -129,22 +129,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
     dbControl = new DBManager(config);
 
     initTabs();
-
-    Button timeout = new Button("test timeout");
-    timeout.addClickListener(new Button.ClickListener() {
-      
-      @Override
-      public void buttonClick(ClickEvent event) {
-        int time = 90000;
-        try {
-          Thread.sleep(time);
-        } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      }
-    });
-    layout.addComponent(timeout);
     
     layout.addComponent(options);
     return layout;
