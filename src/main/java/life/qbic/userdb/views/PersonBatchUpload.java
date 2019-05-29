@@ -46,12 +46,13 @@ import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.datamodel.persons.Person;
 import life.qbic.portal.Styles;
 import life.qbic.portal.Styles.NotificationType;
+import life.qbic.portal.portlet.UserDBPortletUI;
 import life.qbic.userdb.helpers.PersonBatchReader;
-import life.qbic.userdb.helpers.Uploader;
+import life.qbic.portal.components.Uploader;
 
 public class PersonBatchUpload extends VerticalLayout {
 
-  private final Uploader uploader = new Uploader();
+  private Uploader uploader;
 
   private static final Logger logger = LogManager.getLogger(PersonBatchUpload.class);
   private Table table;
@@ -65,6 +66,8 @@ public class PersonBatchUpload extends VerticalLayout {
 
   public PersonBatchUpload(List<String> titleEnums, List<String> affiliationRoles,
       Map<String, Integer> affiMap) {
+    uploader = new Uploader(UserDBPortletUI.tmpFolder);
+    
     this.roleEnums = affiliationRoles;
     this.titleEnums = new HashSet<String>(titleEnums);
     this.affiliationMap = affiMap;
