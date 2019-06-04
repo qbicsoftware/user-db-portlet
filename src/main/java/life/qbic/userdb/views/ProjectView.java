@@ -218,8 +218,8 @@ public class ProjectView extends VerticalLayout {
 
     List<String> header = new ArrayList<>(
         Arrays.asList("Sub-Project", "Short Title", "Project", "Principal Investigator",
-            "PI Affiliation", "PI Adress", "Contact Person", "Contact Affiliation",
-            "Contact Adress", "Project Manager", "Manager Affiliation", "Manager Adress"));
+            "PI Affiliation", "PI Address", "Contact Person", "Contact Affiliation",
+            "Contact Address", "Project Manager", "Manager Affiliation", "Manager Address"));
     List<String> data = new ArrayList<>(Arrays.asList(subProject, secondaryName, space));
 
     addPersonInfos(data, PI);
@@ -250,7 +250,7 @@ public class ProjectView extends VerticalLayout {
       if (affi != null) {
         data.add(affi);
       }
-      data.add(generatePersonAdress(p));
+      data.add(generatePersonAddress(p));
     } else {
       data.add("");
       data.add("");
@@ -262,7 +262,7 @@ public class ProjectView extends VerticalLayout {
     return person.getFirstName() + " " + person.getLastName();
   }
 
-  private String generatePersonAdress(Person person) {
+  private String generatePersonAddress(Person person) {
     Affiliation af = person.getAffiliations().get(0);
     StringBuilder b = new StringBuilder(af.getStreet());
     b.append(" ");
