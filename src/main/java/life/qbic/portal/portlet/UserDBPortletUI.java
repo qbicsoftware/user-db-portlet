@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -66,7 +67,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   private Map<String, Integer> affiMap;
   private Map<String, Integer> personMap;
   private Map<String, ProjectInfo> projectMap;
-  
+
   private TabSheet options;
 
   private ConfigurationManager manager;
@@ -86,9 +87,10 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
     String userID = "";
     boolean success = true;
+    manager = ConfigurationManagerFactory.getInstance();
+
     if (PortalUtils.isLiferayPortlet()) {
       // read in the configuration file
-      manager = ConfigurationManagerFactory.getInstance();
 
       logger.info("User DB portlet is running on Liferay and user is logged in.");
       userID = PortalUtils.getUser().getScreenName();
@@ -107,6 +109,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
     // establish connection to the OpenBIS API
     try {
       logger.debug("trying to connect to openbis");
+
       this.openbis = new OpenBisClient(manager.getDataSourceUser(), manager.getDataSourcePassword(),
           manager.getDataSourceUrl());
       this.openbis.login();
@@ -129,7 +132,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
     dbControl = new DBManager(config);
 
     initTabs();
-    
+
     layout.addComponent(options);
     return layout;
   }
@@ -214,12 +217,18 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
       Map<String, ProjectInfo> allProjects = dbControl.getProjectMap();
       for (Project p : openbisProjects) {
+        String desc = Objects.toString(p.getDescription(), "");
+        desc = desc.replace("\n", ";");
         String projectID = p.getIdentifier();
         String code = p.getCode();
         if (allProjects.get(projectID) == null)
-          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, "", "", -1));
-        else
-          userProjects.put(projectID, allProjects.get(projectID));
+          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, desc, "", -1));
+        else {
+          ProjectInfo info = allProjects.get(projectID);
+          info.setDescription(desc);
+          userProjects.put(projectID, info);
+        }
+
       }
 
       projectMap = new HashMap<>();
@@ -360,17 +369,19 @@ public class UserDBPortletUI extends QBiCPortletUI {
             collaborators.add(c);
           }
           projects.setCollaboratorsOfProject(collaborators);
-        }
-        
-        Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
-        Person manager = getPersonOrNull(projectMap.get(item).getManager());
-        Person contact = getPersonOrNull(projectMap.get(item).getContact());
 
-        projects.handleProjectValueChange(item, investigator, contact, manager);
+          Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
+          Person manager = getPersonOrNull(projectMap.get(item).getManager());
+          Person contact = getPersonOrNull(projectMap.get(item).getContact());
+
+          projects.handleProjectValueChange(item, investigator, contact, manager);
+        } else {
+          projects.handleProjectDeselect();
+        }
       }
 
       private Person getPersonOrNull(String name) {
-        if(personMap.get(name)!=null) {
+        if (personMap.get(name) != null) {
           return dbControl.getPersonWithAffiliations(personMap.get(name)).get(0);
         }
         return null;

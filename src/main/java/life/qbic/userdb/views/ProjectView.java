@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +63,7 @@ public class ProjectView extends VerticalLayout {
   private Button downloadProjectInfo;
   private FileDownloader tsvDL;
 
-  private Table projectPersons;
+  private Table experimentPersons;
   private Button submitPersons;
   private Map<String, CollaboratorWithResponsibility> experimentMap;
 
@@ -98,15 +99,15 @@ public class ProjectView extends VerticalLayout {
     addComponent(downloadProjectInfo);
     initProjectInfos();
 
-    projectPersons = new Table("Experiment Collaborators (optional)");
-    projectPersons.setVisible(false);
-    projectPersons.setStyleName(ValoTheme.TABLE_SMALL);
-    projectPersons.addContainerProperty("Name", ComboBox.class, null);
-    projectPersons.addContainerProperty("Experiment", String.class, null);
-    projectPersons.addContainerProperty("Responsibility", String.class, null);
-    projectPersons.setColumnWidth("Responsibility", 150);
-    projectPersons.setPageLength(1);
-    addComponent(projectPersons);
+    experimentPersons = new Table("Experiment Collaborators (optional)");
+    experimentPersons.setVisible(false);
+    experimentPersons.setStyleName(ValoTheme.TABLE_SMALL);
+    experimentPersons.addContainerProperty("Name", ComboBox.class, null);
+    experimentPersons.addContainerProperty("Experiment", String.class, null);
+    experimentPersons.addContainerProperty("Responsibility", String.class, null);
+    experimentPersons.setColumnWidth("Responsibility", 150);
+    experimentPersons.setPageLength(1);
+    addComponent(experimentPersons);
 
     submitPersons = new Button("Submit Experiment");
     addComponent(submitPersons);
@@ -212,15 +213,21 @@ public class ProjectView extends VerticalLayout {
   private String createTSV(String subProject, Person PI, Person contact, Person manager)
       throws FileNotFoundException, UnsupportedEncodingException {
 
-    String secondaryName = projectMap.get(subProject).getSecondaryName();
+    ProjectInfo proj = projectMap.get(subProject);
+    String secondaryName = proj.getSecondaryName();
     secondaryName = secondaryName == null ? "" : secondaryName;
-    String space = projectMap.get(subProject).getSpace();
+    String space = proj.getSpace();
+    String description = proj.getDescription();
+    System.out.println(description);
 
-    List<String> header = new ArrayList<>(
-        Arrays.asList("Sub-Project", "Short Title", "Project", "Principal Investigator",
-            "PI Affiliation", "PI Adress", "Contact Person", "Contact Affiliation",
-            "Contact Adress", "Project Manager", "Manager Affiliation", "Manager Adress"));
-    List<String> data = new ArrayList<>(Arrays.asList(subProject, secondaryName, space));
+    List<String> summaryHeader =
+        new ArrayList<>(Arrays.asList("Sub-Project", "Short Title", "Description", "Project",
+            "Principal Investigator", "PI E-Mail", "PI Group", "PI Institute", "PI Organization",
+            "PI Address", "Contact Person", "Contact E-Mail", "Contact Group", "Contact Institute",
+            "Contact Organization", "Contact Address", "Project Manager", "Manager E-Mail",
+            "Manager Group", "Manager Institute", "Manager Organization", "Manager Address"));
+    List<String> data =
+        new ArrayList<>(Arrays.asList(subProject, secondaryName, description, space));
 
     addPersonInfos(data, PI);
     addPersonInfos(data, contact);
@@ -230,28 +237,39 @@ public class ProjectView extends VerticalLayout {
     for (CollaboratorWithResponsibility col : experimentMap.values()) {
       String name = col.getPerson();
       if (name != null && !name.isEmpty()) {
-        header.add(col.getOpenbisCode() + " Experiment Collaborator");
-        header.add(col.getOpenbisCode() + " Experiment Role");
+        summaryHeader.add(col.getOpenbisCode() + " Experiment Collaborator");
+        summaryHeader.add(col.getOpenbisCode() + " Experiment Role");
         data.add(name);
         data.add(col.getRole());
       }
     }
 
-    String headerLine = String.join("\t", header);
-    String dataLine = String.join("\t", data);
+    String headerLine = String.join("\t", summaryHeader);
+    String dataLine = replaceSpecialSymbols(String.join("\t", data));
 
     return headerLine + "\n" + dataLine + "\n";
+  }
+
+  private String replaceSpecialSymbols(String string) {
+    string = string.replace("ß", "ss");
+    string = string.replace("ä", "ae").replace("ü", "ue").replace("ö", "oe");
+    string = string.replace("Ä", "Ae").replace("Ü", "Ue").replace("Ö", "Oe");
+    return string;
   }
 
   private void addPersonInfos(List<String> data, Person p) {
     if (p != null) {
       data.add(getFullName(p));
-      String affi = p.getAffiliations().get(0).getGroupName();
-      if (affi != null) {
-        data.add(affi);
-      }
-      data.add(generatePersonAdress(p));
+      data.add(p.getEmail());
+      Affiliation affi = p.getAffiliations().get(0);
+      data.add(Objects.toString(affi.getGroupName(), ""));
+      data.add(Objects.toString(affi.getInstitute(), ""));
+      data.add(Objects.toString(affi.getOrganization(), ""));
+      data.add(generatePersonAddress(p));
     } else {
+      data.add("");
+      data.add("");
+      data.add("");
       data.add("");
       data.add("");
       data.add("");
@@ -262,7 +280,7 @@ public class ProjectView extends VerticalLayout {
     return person.getFirstName() + " " + person.getLastName();
   }
 
-  private String generatePersonAdress(Person person) {
+  private String generatePersonAddress(Person person) {
     Affiliation af = person.getAffiliations().get(0);
     StringBuilder b = new StringBuilder(af.getStreet());
     b.append(" ");
@@ -367,13 +385,13 @@ public class ProjectView extends VerticalLayout {
   }
 
   public Table getCollaboratorTable() {
-    return projectPersons;
+    return experimentPersons;
   }
 
   public void setCollaboratorsOfProject(List<CollaboratorWithResponsibility> collaborators) {
     experimentMap = new HashMap<String, CollaboratorWithResponsibility>();
-    projectPersons.removeAllItems();
-    projectPersons.setVisible(false);
+    experimentPersons.removeAllItems();
+    experimentPersons.setVisible(false);
 
     for (CollaboratorWithResponsibility c : collaborators) {
       String code = c.getOpenbisCode();
@@ -387,17 +405,17 @@ public class ProjectView extends VerticalLayout {
       row.add(persons);
       row.add(c.getOpenbisCode());
       row.add(c.getOpenbisType());
-      projectPersons.addItem(row.toArray(new Object[row.size()]), code);
-      projectPersons.setVisible(true);
+      experimentPersons.addItem(row.toArray(new Object[row.size()]), code);
+      experimentPersons.setVisible(true);
     }
 
     // sort ascending by Experiment ID
     Object[] properties = {"Experiment"};
     boolean[] ordering = {true};
-    projectPersons.sort(properties, ordering);
+    experimentPersons.sort(properties, ordering);
 
-    projectPersons.sort();
-    projectPersons.setPageLength(collaborators.size());
+    experimentPersons.sort();
+    experimentPersons.setPageLength(collaborators.size());
   }
 
   /**
@@ -406,9 +424,10 @@ public class ProjectView extends VerticalLayout {
    */
   public List<CollaboratorWithResponsibility> getNewResponsibilities() {
     List<CollaboratorWithResponsibility> res = new ArrayList<CollaboratorWithResponsibility>();
-    for (Object code : projectPersons.getItemIds()) {
+    logger.debug("ids: " + experimentPersons.getItemIds());
+    for (Object code : experimentPersons.getItemIds()) {
       ComboBox personBox =
-          (ComboBox) projectPersons.getItem(code).getItemProperty("Name").getValue();
+          (ComboBox) experimentPersons.getItem(code).getItemProperty("Name").getValue();
       String name = "";
       if (personBox.getValue() != null)
         name = personBox.getValue().toString();
@@ -434,6 +453,12 @@ public class ProjectView extends VerticalLayout {
     projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
   }
 
+  public void handleProjectDeselect() {
+    projectInfoLayout.setVisible(false);
+    downloadProjectInfo.setVisible(false);
+    experimentPersons.setVisible(false);
+  }
+
   public void handleProjectValueChange(Object item, Person PI, Person contact, Person manager) {
     projectInfoLayout.setVisible(false);
     downloadProjectInfo.setVisible(false);
@@ -450,10 +475,8 @@ public class ProjectView extends VerticalLayout {
         armDownloadButton(item, PI, contact, manager);
         downloadProjectInfo.setVisible(true);
       } catch (FileNotFoundException e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
       } catch (UnsupportedEncodingException e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
       }
       projectInfoLayout.setVisible(true);
