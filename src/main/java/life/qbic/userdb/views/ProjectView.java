@@ -218,7 +218,6 @@ public class ProjectView extends VerticalLayout {
     secondaryName = secondaryName == null ? "" : secondaryName;
     String space = proj.getSpace();
     String description = proj.getDescription();
-    System.out.println(description);
 
     List<String> summaryHeader =
         new ArrayList<>(Arrays.asList("Sub-Project", "Short Title", "Description", "Project",

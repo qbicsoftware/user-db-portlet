@@ -218,7 +218,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       Map<String, ProjectInfo> allProjects = dbControl.getProjectMap();
       for (Project p : openbisProjects) {
         String desc = Objects.toString(p.getDescription(), "");
-        desc = desc.replace("\n", ";");
+        desc = desc.replaceAll("\n+", ". ");
         String projectID = p.getIdentifier();
         String code = p.getCode();
         if (allProjects.get(projectID) == null)
