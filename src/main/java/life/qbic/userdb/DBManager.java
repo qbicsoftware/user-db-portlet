@@ -69,10 +69,10 @@ public class DBManager {
       statement = conn.prepareStatement(sql);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
-            + rs.getString(3) + " " + rs.getString(4) + " " + rs.getString(5) + " "
-            + rs.getString(6) + " " + rs.getString(7) + " " + rs.getString(8) + " "
-            + rs.getString(9) + " " + rs.getString(10) + " " + rs.getString(11));
+        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " " + rs.getString(3)
+            + " " + rs.getString(4) + " " + rs.getString(5) + " " + rs.getString(6) + " "
+            + rs.getString(7) + " " + rs.getString(8) + " " + rs.getString(9) + " "
+            + rs.getString(10) + " " + rs.getString(11));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -507,10 +507,10 @@ public class DBManager {
       statement = conn.prepareStatement(sql);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " "
-            + rs.getString(3) + " " + rs.getString(4) + " " + rs.getString(5) + " "
-            + rs.getString(6) + " " + rs.getString(7) + " " + rs.getString(8) + " "
-            + rs.getString(9) + " " + rs.getString(10) + " " + rs.getString(11));
+        logger.info(Integer.toString(rs.getInt(1)) + " " + rs.getString(2) + " " + rs.getString(3)
+            + " " + rs.getString(4) + " " + rs.getString(5) + " " + rs.getString(6) + " "
+            + rs.getString(7) + " " + rs.getString(8) + " " + rs.getString(9) + " "
+            + rs.getString(10) + " " + rs.getString(11));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1123,47 +1123,47 @@ public class DBManager {
     return details.split("\n")[0].trim();
   }
 
-//  public Person getPersonForProject(String projectIdentifier, String role) {
-//    String sql =
-//        "SELECT * FROM persons LEFT JOIN projects_persons ON persons.id = projects_persons.person_id "
-//            + "LEFT JOIN projects ON projects_persons.project_id = projects.id WHERE "
-//            + "projects.openbis_project_identifier = ? AND projects_persons.project_role = ?";
-//    Person res = null;
-//
-//    Connection conn = login();
-//    try (PreparedStatement statement = conn.prepareStatement(sql)) {
-//      statement.setString(1, projectIdentifier);
-//      statement.setString(2, role);
-//
-//      ResultSet rs = statement.executeQuery();
-//
-//
-//      while (rs.next()) {
-//        String title = rs.getString("title");
-//        String zdvID = rs.getString("username");
-//        String first = rs.getString("first_name");
-//        String last = rs.getString("family_name");
-//        String email = rs.getString("email");
-//        String tel = rs.getString("phone");
-//        Affiliation affiliation = getAffiliationFromProjectIDAndRole(projectIdentifier, role);
-//        int instituteID = -1;// TODO fetch correct id
-//
-//
-//        res = new Person(zdvID, title, first, last, email, tel, instituteID, affiliation);
-//      }
-//    } catch (SQLException e) {
-//      LOG.error("Could not get person for project due to database error", e);
-//    } finally {
-//      logout(conn);
-//    }
-//
-//    return res;
-//  }
-  
-//
-//  int affiliationID = getAffiliationIDForPersonID(id);
-//  affiliationOfPerson = getAffiliationWithID(affiliationID);
-//  
+  // public Person getPersonForProject(String projectIdentifier, String role) {
+  // String sql =
+  // "SELECT * FROM persons LEFT JOIN projects_persons ON persons.id = projects_persons.person_id "
+  // + "LEFT JOIN projects ON projects_persons.project_id = projects.id WHERE "
+  // + "projects.openbis_project_identifier = ? AND projects_persons.project_role = ?";
+  // Person res = null;
+  //
+  // Connection conn = login();
+  // try (PreparedStatement statement = conn.prepareStatement(sql)) {
+  // statement.setString(1, projectIdentifier);
+  // statement.setString(2, role);
+  //
+  // ResultSet rs = statement.executeQuery();
+  //
+  //
+  // while (rs.next()) {
+  // String title = rs.getString("title");
+  // String zdvID = rs.getString("username");
+  // String first = rs.getString("first_name");
+  // String last = rs.getString("family_name");
+  // String email = rs.getString("email");
+  // String tel = rs.getString("phone");
+  // Affiliation affiliation = getAffiliationFromProjectIDAndRole(projectIdentifier, role);
+  // int instituteID = -1;// TODO fetch correct id
+  //
+  //
+  // res = new Person(zdvID, title, first, last, email, tel, instituteID, affiliation);
+  // }
+  // } catch (SQLException e) {
+  // LOG.error("Could not get person for project due to database error", e);
+  // } finally {
+  // logout(conn);
+  // }
+  //
+  // return res;
+  // }
+
+  //
+  // int affiliationID = getAffiliationIDForPersonID(id);
+  // affiliationOfPerson = getAffiliationWithID(affiliationID);
+  //
   /**
    *
    * @param personID
@@ -1172,9 +1172,9 @@ public class DBManager {
   public int getAffiliationIDForPersonID(Integer personID) {
     String lnk = "persons_organizations";
     String sql =
-            "SELECT persons.*, organizations.*, " + lnk + ".occupation FROM persons, organizations, "
-                    + lnk + " WHERE persons.id = " + Integer.toString(personID) + " AND persons.id = "
-                    + lnk + ".person_id and organizations.id = " + lnk + ".organization_id";
+        "SELECT persons.*, organizations.*, " + lnk + ".occupation FROM persons, organizations, "
+            + lnk + " WHERE persons.id = " + Integer.toString(personID) + " AND persons.id = " + lnk
+            + ".person_id and organizations.id = " + lnk + ".organization_id";
     Connection conn = login();
 
     int affiliationID = -1;
@@ -1182,7 +1182,7 @@ public class DBManager {
     try (PreparedStatement statement = conn.prepareStatement(sql)) {
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-         affiliationID = rs.getInt("organizations.id");
+        affiliationID = rs.getInt("organizations.id");
 
       }
       statement.close();
@@ -1194,7 +1194,7 @@ public class DBManager {
 
     return affiliationID;
   }
-  
+
   public String getPersonDetailsForProject(String projectIdentifier, String role) {
     String sql =
         "SELECT projects_persons.*, projects.* FROM projects_persons, projects WHERE projects.openbis_project_identifier = ?"
