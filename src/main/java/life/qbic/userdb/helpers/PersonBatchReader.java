@@ -74,6 +74,7 @@ public class PersonBatchReader {
    * @throws JAXBException
    */
   public boolean readPeopleFile(File file) throws IOException {
+    logger.info("parsing uploaded file: "+file.getAbsolutePath());
     people = new ArrayList<Person>();
     tsvByRows = new ArrayList<String>();
     BufferedReader reader = new BufferedReader(new FileReader(file));
