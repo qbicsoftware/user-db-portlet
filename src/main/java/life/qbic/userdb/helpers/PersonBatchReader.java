@@ -32,7 +32,6 @@ public class PersonBatchReader {
   public PersonBatchReader() {
     Set<String> mandatory =
         new HashSet<String>(Arrays.asList("first name", "last name", "title", "email"));
-    //
     this.mandatory = new ArrayList<String>(mandatory);
     Set<String> optional = new HashSet<String>(Arrays.asList("phone", "username"));
     this.optional = new ArrayList<String>(optional);
@@ -41,7 +40,7 @@ public class PersonBatchReader {
   public static void main(String[] args) throws JAXBException {
     try {
       PersonBatchReader p = new PersonBatchReader();
-      if (p.readPeopleFile(new File("/Users/frieda/Desktop/person_import.tsv")))
+      if (p.readPeopleFile(new File("person_import.tsv")))
         System.out.println(p.getPeople());
       else
         System.out.println(p.getError());
