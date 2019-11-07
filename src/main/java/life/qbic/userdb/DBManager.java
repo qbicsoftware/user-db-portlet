@@ -548,7 +548,7 @@ public class DBManager {
         String groupName = rs.getString("group_name");
         String acronym = rs.getString("group_acronym");
         String institute = rs.getString("institute");
-        String organization = rs.getString("umbrella_organizatiuon");
+        String organization = rs.getString("umbrella_organization");
 
         String resName = "";
         boolean group = !(groupName == null || groupName.isEmpty());
