@@ -74,13 +74,6 @@ public class AffiliationInput extends FormLayout {
             + "e.g. of the group if specified or of the institute if group field is left empty.",
         "Acronym"));
 
-    organization = new TextField("Organization");
-    organization.setWidth("300px");
-    organization.setRequired(true);
-    organization.setInputPrompt("...or university name");
-    organization.setDescription("Organization or University Name");
-    addComponent(organization);
-
     institute = new ComboBox("Institute", institutes);
     institute.setWidth("300px");
     institute.setNewItemsAllowed(true);
@@ -89,6 +82,14 @@ public class AffiliationInput extends FormLayout {
     // institute.setRequired(true);
     addComponent(Styles.questionize(institute, "Select existing institutes or input a new one.",
         "Institute"));
+    
+    organization = new TextField("Organization");
+    organization.setWidth("300px");
+    organization.setRequired(true);
+    organization.setInputPrompt("...or university name");
+    organization.setDescription("Organization or University Name");
+    addComponent(organization);
+
 
     faculty = new ComboBox("Faculty", faculties);
     faculty.setRequired(true);
