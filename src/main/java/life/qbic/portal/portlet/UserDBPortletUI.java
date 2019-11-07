@@ -7,13 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserGroup;
 import com.vaadin.annotations.Theme;
@@ -29,7 +27,6 @@ import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
-
 import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Experiment;
 import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Project;
 import life.qbic.datamodel.persons.Affiliation;
@@ -318,9 +315,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
           if (registered.isEmpty())
             successfulCommit();
           else {
-            Styles.notification("Person already registered",
-                StringUtils.join(registered, ", ")
-                    + " had a username or email already registered in our database! They were skipped in the registration process.",
+            Styles.notification("Person already registered", StringUtils.join(registered, ", ")
+                + " had a username or email already registered in our database! They were skipped in the registration process.",
                 NotificationType.DEFAULT);
           }
         }
@@ -483,10 +479,12 @@ public class UserDBPortletUI extends QBiCPortletUI {
         int contact = vipTab.getNewContactID();
         int head = vipTab.getNewHeadID();
         if (affi > 0) {
-          if (head > 0)
+          if (head > 0) {
             dbControl.setAffiliationVIP(affi, head, "head");
-          if (contact > 0)
+          }
+          if (contact > 0) {
             dbControl.setAffiliationVIP(affi, contact, "main_contact");
+          }
           vipTab.updateVIPs();
           successfulCommit();
         }
@@ -572,7 +570,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       public void valueChange(ValueChangeEvent event) {
         if (multiAffilTab.getPersonBox().getValue() != null) {
           String personName = multiAffilTab.getPersonBox().getValue().toString();
-          multiAffilTab.reactToPersonSelection(
+          multiAffilTab.reactToPersonSelection(personName, 
               dbControl.getPersonWithAffiliations(personMap.get(personName)));
           multiAffilTab.getAddButton().setEnabled(multiAffilTab.newAffiliationPossible());
         }
