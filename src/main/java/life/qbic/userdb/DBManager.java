@@ -31,10 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -549,12 +547,13 @@ public class DBManager {
         int id = rs.getInt("id");
         String groupName = rs.getString("group_name");
         String acronym = rs.getString("group_acronym");
-        String organization = rs.getString("institute");
+        String institute = rs.getString("institute");
+        String organization = rs.getString("umbrella_organizatiuon");
 
         String resName = "";
         boolean group = !(groupName == null || groupName.isEmpty());
         boolean acr = !(acronym == null || acronym.isEmpty());
-        boolean org = !(organization == null || organization.isEmpty());
+        boolean org = !(institute == null || institute.isEmpty());
 
         // no group
         if (!group) {
@@ -564,7 +563,7 @@ public class DBManager {
             if (!org) {
               resName = "unknown";
             } else {
-              resName = organization;
+              resName = institute;
             }
             // acronym
           } else {
@@ -572,7 +571,7 @@ public class DBManager {
             if (!org) {
               resName = acronym;
             } else {
-              resName = acronym + " - " + organization;
+              resName = acronym + " - " + institute;
             }
           }
           // group
@@ -583,7 +582,7 @@ public class DBManager {
             if (!org) {
               resName = groupName;
             } else {
-              resName = groupName + " - " + organization;
+              resName = groupName + " - " + institute;
             }
             // acronym
           } else {
@@ -591,11 +590,13 @@ public class DBManager {
             if (!org) {
               resName = groupName + " (" + acronym + ")";
             } else {
-              resName = groupName + " (" + acronym + ") - " + organization;
+              resName = groupName + " (" + acronym + ") - " + institute;
             }
           }
         }
-
+        if (resName.isEmpty() || resName == null) {
+          resName = organization;
+        }
         res.put(resName, id);
       }
     } catch (SQLException e) {
