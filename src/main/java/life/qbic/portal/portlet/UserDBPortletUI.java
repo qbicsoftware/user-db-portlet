@@ -1,6 +1,7 @@
 package life.qbic.portal.portlet;
 
 import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -213,20 +214,19 @@ public class UserDBPortletUI extends QBiCPortletUI {
       openbisProjects = openbis.getOpenbisInfoService()
           .listProjectsOnBehalfOfUser(openbis.getSessionToken(), userID);
 
-      Map<String, ProjectInfo> allProjects = dbControl.getProjectMap();
+      Map<String, ProjectInfo> dbProjects = dbControl.getProjectMap();
       for (Project p : openbisProjects) {
         String desc = Objects.toString(p.getDescription(), "");
         desc = desc.replaceAll("\n+", ". ");
         String projectID = p.getIdentifier();
         String code = p.getCode();
-        if (allProjects.get(projectID) == null)
+        if (dbProjects.get(projectID) == null)
           userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, desc, "", -1));
         else {
-          ProjectInfo info = allProjects.get(projectID);
+          ProjectInfo info = dbProjects.get(projectID);
           info.setDescription(desc);
           userProjects.put(projectID, info);
         }
-
       }
 
       projectMap = new HashMap<>();
