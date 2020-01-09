@@ -25,21 +25,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tepi.filtertable.FilterTable;
-
+import com.vaadin.data.Property.ValueChangeEvent;
+import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-
+import ch.systemsx.cisd.common.concurrent.TimerUtilities;
+import life.qbic.datamodel.identifiers.SampleCodeFunctions;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -47,19 +50,28 @@ import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.portal.Styles;
 import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
+import life.qbic.portal.utils.PortalUtils;
+import life.qbic.utils.TimeUtils;
 
 public class ProjectView extends VerticalLayout {
   Logger logger = LogManager.getLogger(ProjectView.class);
 
   private FilterTable projectTable;
+
+  private Button downloadProjects;
+  private FileDownloader tableDL;
+
   private Map<String, ProjectInfo> projectMap;
   private Map<String, Integer> personMap;
+
+  private CheckBox showIncomplete;
 
   private TextField altName;
   private ComboBox investigatorBox;
   private ComboBox contactBox;
   private ComboBox managerBox;
   private Button submitInfo;
+
   private Button downloadProjectInfo;
   private FileDownloader tsvDL;
 
@@ -75,6 +87,18 @@ public class ProjectView extends VerticalLayout {
 
     this.personMap = personMap;
     this.projectMap = projectMap;
+
+    showIncomplete = new CheckBox("Only show projects missing information");
+    showIncomplete.addValueChangeListener(new ValueChangeListener() {
+
+      @Override
+      public void valueChange(ValueChangeEvent event) {
+        initProjectTable(showIncomplete.getValue());
+      }
+    });
+    addComponent(showIncomplete);
+    downloadProjects = new Button("Download Table of projects");
+    addComponent(downloadProjects);
 
     projectTable = new FilterTable("Projects");
     projectTable.setPageLength(Math.min(15, projectMap.size()));
@@ -97,7 +121,8 @@ public class ProjectView extends VerticalLayout {
     downloadProjectInfo = new Button("Download Project Information");
     downloadProjectInfo.setVisible(false);
     addComponent(downloadProjectInfo);
-    initProjectInfos();
+    initProjectTable(false);
+    initView();
 
     experimentPersons = new Table("Experiment Collaborators (optional)");
     experimentPersons.setVisible(false);
@@ -113,21 +138,7 @@ public class ProjectView extends VerticalLayout {
     addComponent(submitPersons);
   }
 
-  public void initProjectInfos() {
-    projectTable.removeAllItems();
-    for (String code : projectMap.keySet()) {
-      ProjectInfo p = projectMap.get(code);
-      List<Object> row = new ArrayList<Object>();
-      row.add(code);
-      row.add(p.getSecondaryName());
-      row.add(p.getSpace());
-      row.add(p.getInvestigator());
-      projectTable.addItem(row.toArray(new Object[row.size()]), code);
-    }
-
-    // sort ascending by Project ID
-    // projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
-
+  private void initView() {
     projectInfoLayout = new VerticalLayout();
     projectInfoLayout.setVisible(false);
     altName = new TextField("Short Title");
@@ -150,46 +161,45 @@ public class ProjectView extends VerticalLayout {
     projectInfoLayout.addComponent(submitInfo);
     projectInfoLayout.setSpacing(true);
     addComponent(projectInfoLayout);
+  }
+  
+  public void initProjectTable(boolean showIncompleteOnly) {
+    projectTable.removeAllItems();
+    for (String code : projectMap.keySet()) {
+      ProjectInfo p = projectMap.get(code);
+      List<Object> row = new ArrayList<Object>();
 
-    // projectTable.addValueChangeListener(new ValueChangeListener() {
-    //
-    // /**
-    // *
-    // */
-    // private static final long serialVersionUID = -3035074733968253748L;
-    //
-    // @Override
-    // public void valueChange(ValueChangeEvent event) {
-    // projectInfo.setVisible(false);
-    // downloadProjectInfo.setVisible(false);
-    // Object item = projectTable.getValue();
-    // if (item != null) {
-    // String secondaryName = projectMap.get(item).getSecondaryName();
-    // String invName = projectMap.get(item).getInvestigator();
-    // String contactName = projectMap.get(item).getContact();
-    // String managerName = projectMap.get(item).getManager();
-    //
-    // projectInfo.setCaption(projectMap.get(item).getProjectCode());
-    // logger.info("Selected project: " + projectMap.get(item));
-    // altName.setValue(secondaryName);
-    // investigator.setValue(invName);
-    // contact.setValue(contactName);
-    // manager.setValue(managerName);
-    //
-    // try {
-    // armDownloadButton(item);
-    // downloadProjectInfo.setVisible(true);
-    // } catch (FileNotFoundException e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // } catch (UnsupportedEncodingException e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // }
-    // projectInfo.setVisible(true);
-    // }
-    // }
-    // });
+      String secName = p.getSecondaryName();
+      String inv = p.getInvestigator();
+      String mang = p.getManager();
+      String cont = p.getContact();
+
+      row.add(code);
+      row.add(secName);
+      row.add(p.getSpace());
+      row.add(inv);
+
+      boolean complete = StringUtils.isNotBlank(secName) && StringUtils.isNotBlank(inv)
+          && StringUtils.isNotBlank(mang) && StringUtils.isNotBlank(cont);
+
+      if (showIncompleteOnly) {
+        if (!complete) {
+          projectTable.addItem(row.toArray(new Object[row.size()]), code);
+        }
+      } else {
+        projectTable.addItem(row.toArray(new Object[row.size()]), code);
+      }
+      projectTable.setCaption(projectTable.size() + " Projects");
+    }
+    downloadProjects.setVisible(false);
+    try {
+      armProjectsDownloadButton();
+      downloadProjects.setVisible(true);
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -210,7 +220,7 @@ public class ProjectView extends VerticalLayout {
    * @throws FileNotFoundException
    * @throws UnsupportedEncodingException
    */
-  private String createTSV(String subProject, Person PI, Person contact, Person manager)
+  private String createProjectTSV(String subProject, Person PI, Person contact, Person manager)
       throws FileNotFoundException, UnsupportedEncodingException {
 
     ProjectInfo proj = projectMap.get(subProject);
@@ -247,6 +257,33 @@ public class ProjectView extends VerticalLayout {
     String dataLine = replaceSpecialSymbols(String.join("\t", data));
 
     return headerLine + "\n" + dataLine + "\n";
+  }
+
+  private String createTSVForTable() throws FileNotFoundException, UnsupportedEncodingException {
+
+    List<String> header = new ArrayList<>(Arrays.asList("Sub-Project", "Short Title", "Project",
+        "Principal Investigator", "Contact Person", "Project Manager"));
+    String headerLine = String.join("\t", header);
+
+    StringBuilder builder = new StringBuilder(headerLine + "\n");
+
+    for (Object item : projectTable.getItemIds()) {
+      ProjectInfo proj = projectMap.get(item);
+      String code = proj.getProjectCode();
+      String name = proj.getSecondaryName();
+      name = name == null ? "" : name;
+      String space = proj.getSpace();
+      String inv = proj.getInvestigator();
+      inv = inv == null ? "" : inv;
+      String cont = proj.getContact();
+      cont = cont == null ? "" : cont;
+      String mang = proj.getManager();
+      mang = mang == null ? "" : mang;
+      String row = replaceSpecialSymbols(
+          String.join("\t", Arrays.asList(code, name, space, inv, cont, mang)));
+      builder.append(row + "\n");
+    }
+    return builder.toString();
   }
 
   private String replaceSpecialSymbols(String string) {
@@ -306,16 +343,28 @@ public class ProjectView extends VerticalLayout {
     return resource;
   }
 
-  private void armDownloadButton(Object item, Person PI, Person contact, Person manager)
-      throws FileNotFoundException, UnsupportedEncodingException {
+  private void armSingleProjectDownloadButton(Object item, Person PI, Person contact,
+      Person manager) throws FileNotFoundException, UnsupportedEncodingException {
+    String ts = TimeUtils.getCurrentTimestampString();
     String subProject = item.toString();
-    StreamResource tsvStream =
-        getTSVStream(createTSV(subProject, PI, contact, manager), subProject + "_summary");
+    StreamResource tsvStream = getTSVStream(createProjectTSV(subProject, PI, contact, manager),
+        subProject + "_" + ts + "_summary");
     if (tsvDL == null) {
       tsvDL = new FileDownloader(tsvStream);
       tsvDL.extend(downloadProjectInfo);
     } else
       tsvDL.setFileDownloadResource(tsvStream);
+  }
+
+  private void armProjectsDownloadButton()
+      throws FileNotFoundException, UnsupportedEncodingException {
+    String ts = TimeUtils.getCurrentTimestampString();
+    StreamResource tsvStream = getTSVStream(createTSVForTable(), ts + "projects_table");
+    if (tableDL == null) {
+      tableDL = new FileDownloader(tsvStream);
+      tableDL.extend(downloadProjects);
+    } else
+      tableDL.setFileDownloadResource(tsvStream);
   }
 
   /**
@@ -440,16 +489,17 @@ public class ProjectView extends VerticalLayout {
 
   public void updateChangedInfo(ProjectInfo info) {
     String code = info.getProjectCode();
-    projectTable.removeItem(code);
+    // projectTable.removeItem(code);
     projectMap.put(code, info);
-    List<Object> row = new ArrayList<Object>();
-    row.add(code);
-    row.add(info.getSecondaryName());
-    row.add(info.getSpace());
-    row.add(info.getInvestigator());
-    projectTable.addItem(row.toArray(new Object[row.size()]), code);
+    initProjectTable(showIncomplete.getValue());
+    // List<Object> row = new ArrayList<Object>();
+    // row.add(code);
+    // row.add(info.getSecondaryName());
+    // row.add(info.getSpace());
+    // row.add(info.getInvestigator());
+    // projectTable.addItem(row.toArray(new Object[row.size()]), code);
     // sort ascending by Project ID
-    projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
+    // projectTable.sort(new Object[] {"Sub-Project"}, new boolean[] {true});
   }
 
   public void handleProjectDeselect() {
@@ -471,7 +521,7 @@ public class ProjectView extends VerticalLayout {
       contactBox.setValue(projectMap.get(item).getContact());
       managerBox.setValue(projectMap.get(item).getManager());
       try {
-        armDownloadButton(item, PI, contact, manager);
+        armSingleProjectDownloadButton(item, PI, contact, manager);
         downloadProjectInfo.setVisible(true);
       } catch (FileNotFoundException e) {
         e.printStackTrace();

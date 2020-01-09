@@ -16,10 +16,8 @@
 package life.qbic.userdb.views;
 
 import java.util.Map;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.FontAwesome;
@@ -28,7 +26,6 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.themes.ValoTheme;
-
 import life.qbic.portal.Styles;
 
 public class AffiliationVIPTab extends FormLayout {
@@ -63,7 +60,7 @@ public class AffiliationVIPTab extends FormLayout {
         if (val != null) {
           String affiName = val.toString();
           int id = affiliations.get(affiName);
-          Pair names = personAffiliationsInTable.get(id);
+          Pair<String, String> names = personAffiliationsInTable.get(id);
           contact.setValue(names.getLeft());
           head.setValue(names.getRight());
         }
@@ -139,7 +136,7 @@ public class AffiliationVIPTab extends FormLayout {
     if (hd == null)
       hd = personAffiliationsInTable.get(affi).getRight();
     personAffiliationsInTable.put(affi,
-        new ImmutablePair<String, String>((String) ctct, (String) hd));
+        new ImmutablePair<>((String) ctct, (String) hd));
   }
 
   public Button getSetHeadAndContactButton() {

@@ -1,19 +1,17 @@
 /*******************************************************************************
  * QBiC User DB Tools enables users to add people and affiliations to our mysql user database.
- * Copyright (C) 2016  Andreas Friedrich
+ * Copyright (C) 2016 Andreas Friedrich
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with this program. If
+ * not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 package life.qbic.userdb.views;
 
@@ -22,7 +20,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
@@ -30,7 +27,6 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.themes.ValoTheme;
-
 import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
@@ -133,17 +129,12 @@ public class MultiAffiliationTab extends VerticalLayout {
     return res;
   }
 
-  public void reactToPersonSelection(List<Person> personsWithAffiliations) {
+  public void reactToPersonSelection(String personName, List<Person> personsWithAffiliations) {
     table.removeAllItems();
     personAffiliationsInTable = new HashMap<Integer, Person>();
-    Person p = personsWithAffiliations.get(0);
-    String title = p.getTitle();
-    String first = p.getFirstName();
-    String last = p.getLastName();
-    currentPerson = first + " " + last;
-    table.setCaption("Affiliations of " + title + " " + first + " " + last);
+    currentPerson = personName;
+    table.setCaption("Affiliations of " + personName);
     addDataToTable(personsWithAffiliations);
-
     table.setVisible(true);
   }
 
