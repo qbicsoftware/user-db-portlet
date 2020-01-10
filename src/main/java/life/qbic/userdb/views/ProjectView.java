@@ -108,6 +108,7 @@ public class ProjectView extends VerticalLayout {
     projectTable.setColumnWidth("Name", 300);
     projectTable.addContainerProperty("Project", String.class, null);
     projectTable.addContainerProperty("Principal Investigator", String.class, null);
+    projectTable.addContainerProperty("Project Manager", String.class, null);
     projectTable.setSelectable(true);
     addComponent(projectTable);
 
@@ -135,6 +136,7 @@ public class ProjectView extends VerticalLayout {
     addComponent(experimentPersons);
 
     submitPersons = new Button("Submit Experiment");
+    submitPersons.setVisible(false);
     addComponent(submitPersons);
   }
 
@@ -178,7 +180,8 @@ public class ProjectView extends VerticalLayout {
       row.add(secName);
       row.add(p.getSpace());
       row.add(inv);
-
+      row.add(mang);
+      
       boolean complete = StringUtils.isNotBlank(secName) && StringUtils.isNotBlank(inv)
           && StringUtils.isNotBlank(mang) && StringUtils.isNotBlank(cont);
 
@@ -506,11 +509,13 @@ public class ProjectView extends VerticalLayout {
     projectInfoLayout.setVisible(false);
     downloadProjectInfo.setVisible(false);
     experimentPersons.setVisible(false);
+    submitPersons.setVisible(false);
   }
 
   public void handleProjectValueChange(Object item, Person PI, Person contact, Person manager) {
     projectInfoLayout.setVisible(false);
     downloadProjectInfo.setVisible(false);
+
     if (item != null) {
       String secondaryName = projectMap.get(item).getSecondaryName();
 
@@ -523,6 +528,7 @@ public class ProjectView extends VerticalLayout {
       try {
         armSingleProjectDownloadButton(item, PI, contact, manager);
         downloadProjectInfo.setVisible(true);
+        submitPersons.setVisible(true);
       } catch (FileNotFoundException e) {
         e.printStackTrace();
       } catch (UnsupportedEncodingException e) {
