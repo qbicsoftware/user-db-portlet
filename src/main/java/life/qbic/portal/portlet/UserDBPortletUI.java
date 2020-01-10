@@ -73,7 +73,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean development = false;
+  private final boolean development = true;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
