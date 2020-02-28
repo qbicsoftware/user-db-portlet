@@ -1,7 +1,7 @@
 package life.qbic.portal.portlet;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -73,7 +73,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean development = false;
+  private final boolean development = true;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
@@ -153,6 +153,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
     } else {
       affiMap = dbControl.getAffiliationMap();
       personMap = dbControl.getPersonMap();
+      Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
+
       Set<String> instituteNames = dbControl.getInstituteNames();
       List<String> facultyEnums =
           dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty");
@@ -160,11 +162,13 @@ public class UserDBPortletUI extends QBiCPortletUI {
           dbControl.getPossibleEnumsForColumnsInTable("persons_organizations", "occupation");
       List<String> titleEnums = dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
 
-      PersonInput addUserTab = new PersonInput(titleEnums, affiMap, affiliationRoles,
-          new AffiliationInput(instituteNames, facultyEnums, personMap));
+      PersonInput addUserTab =
+          new PersonInput(titleEnums, affiMap, affiliationRoles, colNamesToMaxLength,
+              new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength));
       options.addTab(addUserTab, "New Person");
 
-      AffiliationInput addAffilTab = new AffiliationInput(instituteNames, facultyEnums, personMap);
+      AffiliationInput addAffilTab =
+          new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength);
       options.addTab(addAffilTab, "New Affiliation");
 
 
@@ -241,6 +245,18 @@ public class UserDBPortletUI extends QBiCPortletUI {
       initPortletToDBFunctionality(addAffilTab, addUserTab, batchTab, multiAffilTab, vipTab,
           searchView, projectView);
     }
+  }
+
+  private Map<String, Integer> fillMaxInputLengthMap() {
+    Map<String, Integer> res = new HashMap<>();
+    try {
+      res.putAll(dbControl.getColsMaxLengthsForTable("persons"));
+      res.putAll(dbControl.getColsMaxLengthsForTable("organizations"));
+    } catch (SQLException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return res;
   }
 
   private boolean canUsePortlet() {
@@ -570,7 +586,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       public void valueChange(ValueChangeEvent event) {
         if (multiAffilTab.getPersonBox().getValue() != null) {
           String personName = multiAffilTab.getPersonBox().getValue().toString();
-          multiAffilTab.reactToPersonSelection(personName, 
+          multiAffilTab.reactToPersonSelection(personName,
               dbControl.getPersonWithAffiliations(personMap.get(personName)));
           multiAffilTab.getAddButton().setEnabled(multiAffilTab.newAffiliationPossible());
         }

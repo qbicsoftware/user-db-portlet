@@ -59,6 +59,10 @@ public class DBManager {
     }
   }
 
+  private String prepareStringInput(String input) {
+    return input.trim();
+  }
+
   private void printAffiliations() {
     String sql = "SELECT * FROM organizations";
     Connection conn = login();
@@ -80,6 +84,7 @@ public class DBManager {
   }
 
   public String getProjectName(String projectIdentifier) {
+    projectIdentifier = prepareStringInput(projectIdentifier);
     String sql = "SELECT short_title from projects WHERE openbis_project_identifier = ?";
     String res = "";
     Connection conn = login();
@@ -176,6 +181,7 @@ public class DBManager {
   }
 
   public void addOrChangeSecondaryNameForProject(int projectID, String secondaryName) {
+    secondaryName = prepareStringInput(secondaryName);
     logger.info(
         "Adding/Updating secondary name of project with id " + projectID + " to " + secondaryName);
     boolean saved = saveOldSecondaryNameForProjects(projectID);
@@ -333,6 +339,7 @@ public class DBManager {
   }
 
   public boolean isProjectInDB(String projectIdentifier) {
+    projectIdentifier = prepareStringInput(projectIdentifier);
     logger.info("Looking for project " + projectIdentifier + " in the DB");
     String sql = "SELECT * from projects WHERE openbis_project_identifier = ?";
     boolean res = false;
@@ -356,6 +363,8 @@ public class DBManager {
   }
 
   public int addProjectToDB(String projectIdentifier, String projectName) {
+    projectIdentifier = prepareStringInput(projectIdentifier);
+    projectName = prepareStringInput(projectName);
     if (!isProjectInDB(projectIdentifier)) {
       logger.info("Trying to add project " + projectIdentifier + " to the person DB");
       String sql = "INSERT INTO projects (openbis_project_identifier, short_title) VALUES(?, ?)";
@@ -384,6 +393,7 @@ public class DBManager {
   }
 
   public boolean hasPersonRoleInProject(int personID, int projectID, String role) {
+    role = prepareStringInput(role);
     logger.info("Checking if person already has this role in the project.");
     String sql =
         "SELECT * from projects_persons WHERE person_id = ? AND project_id = ? and project_role = ?";
@@ -410,6 +420,7 @@ public class DBManager {
   }
 
   public void addOrUpdatePersonToProject(int projectID, int personID, String role) {
+    role = prepareStringInput(role);
     if (!hasPersonRoleInProject(personID, projectID, role)) {
       logger.info("Trying to add person with role " + role + " to a project.");
       if (!roleForProjectTaken(projectID, role)) {
@@ -455,6 +466,7 @@ public class DBManager {
   }
 
   private boolean roleForProjectTaken(int projectID, String role) {
+    role = prepareStringInput(role);
     boolean res = false;
     String sql = "SELECT person_ID FROM projects_persons WHERE project_id = ? AND project_role = ?";
     Connection conn = login();
@@ -764,25 +776,6 @@ public class DBManager {
     return res;
   }
 
-  // public List<String> getPersons() {
-  // List<String> res = new ArrayList<String>();
-  // String sql = "SELECT * FROM person";
-  // Connection conn = login();
-  // try (PreparedStatement statement = conn.prepareStatement(sql)) {
-  // ResultSet rs = statement.executeQuery();
-  // while (rs.next()) {
-  // String first = Integer.toString(rs.getInt("first_name"));
-  // String last = Integer.toString(rs.getInt("last_name"));
-  // res.add(first + " " + last);
-  // }
-  // } catch (SQLException e) {
-  // e.printStackTrace();
-  // } finally {
-  // endQuery(conn, statement);
-  // }
-  // return res;
-  // }
-
   public Map<String, Integer> getPersonMap() {
     Map<String, Integer> res = new HashMap<String, Integer>();
     String sql = "SELECT * FROM persons";
@@ -802,6 +795,20 @@ public class DBManager {
     } finally {
       endQuery(conn, statement);
     }
+    return res;
+  }
+
+  public Map<String, Integer> getColsMaxLengthsForTable(String table) throws SQLException {
+    Connection conn = login();
+    DatabaseMetaData md = conn.getMetaData();
+    Map<String, Integer> res = new HashMap<>();
+    ResultSet rs = md.getColumns(null, null, table, null);
+    while (rs.next()) {
+      String cName = rs.getString("COLUMN_NAME");
+      int length = rs.getInt("COLUMN_SIZE");
+      res.put(cName, new Integer(length));
+    }
+    logout(conn);
     return res;
   }
 
@@ -982,6 +989,7 @@ public class DBManager {
   }
 
   public Affiliation getOrganizationInfosFromInstitute(String institute) {
+    institute = prepareStringInput(institute);
     Affiliation res = null;
     String sql = "SELECT * FROM organizations WHERE institute LIKE ?";
     Connection conn = login();
@@ -1034,6 +1042,7 @@ public class DBManager {
   }
 
   public Affiliation getOrganizationInfosFromOrg(String organization) {
+    organization = prepareStringInput(organization);
     Affiliation res = null, maybe = null;
     String sql = "SELECT * FROM organizations WHERE umbrella_organization LIKE ?";
     Connection conn = login();
@@ -1118,53 +1127,12 @@ public class DBManager {
     return res;
   }
 
-
   public String getInvestigatorForProject(String projectIdentifier) {
+    projectIdentifier = prepareStringInput(projectIdentifier);
     String details = getPersonDetailsForProject(projectIdentifier, "PI");
     return details.split("\n")[0].trim();
   }
 
-  // public Person getPersonForProject(String projectIdentifier, String role) {
-  // String sql =
-  // "SELECT * FROM persons LEFT JOIN projects_persons ON persons.id = projects_persons.person_id "
-  // + "LEFT JOIN projects ON projects_persons.project_id = projects.id WHERE "
-  // + "projects.openbis_project_identifier = ? AND projects_persons.project_role = ?";
-  // Person res = null;
-  //
-  // Connection conn = login();
-  // try (PreparedStatement statement = conn.prepareStatement(sql)) {
-  // statement.setString(1, projectIdentifier);
-  // statement.setString(2, role);
-  //
-  // ResultSet rs = statement.executeQuery();
-  //
-  //
-  // while (rs.next()) {
-  // String title = rs.getString("title");
-  // String zdvID = rs.getString("username");
-  // String first = rs.getString("first_name");
-  // String last = rs.getString("family_name");
-  // String email = rs.getString("email");
-  // String tel = rs.getString("phone");
-  // Affiliation affiliation = getAffiliationFromProjectIDAndRole(projectIdentifier, role);
-  // int instituteID = -1;// TODO fetch correct id
-  //
-  //
-  // res = new Person(zdvID, title, first, last, email, tel, instituteID, affiliation);
-  // }
-  // } catch (SQLException e) {
-  // LOG.error("Could not get person for project due to database error", e);
-  // } finally {
-  // logout(conn);
-  // }
-  //
-  // return res;
-  // }
-
-  //
-  // int affiliationID = getAffiliationIDForPersonID(id);
-  // affiliationOfPerson = getAffiliationWithID(affiliationID);
-  //
   /**
    *
    * @param personID
@@ -1197,6 +1165,8 @@ public class DBManager {
   }
 
   public String getPersonDetailsForProject(String projectIdentifier, String role) {
+    projectIdentifier = prepareStringInput(projectIdentifier);
+    role = prepareStringInput(role);
     String sql =
         "SELECT projects_persons.*, projects.* FROM projects_persons, projects WHERE projects.openbis_project_identifier = ?"
             + " AND projects.id = projects_persons.project_id AND projects_persons.project_role = ?";
@@ -1377,6 +1347,7 @@ public class DBManager {
   }
 
   public void setAffiliationVIP(int affi, int person, String role) {
+    role = prepareStringInput(role);
     logger.info("Trying to set/change affiliation-specific role " + role);
     String sql = "UPDATE organizations SET " + role + "=? WHERE id = ?";
     Connection conn = login();
@@ -1396,6 +1367,8 @@ public class DBManager {
   }
 
   public List<Person> getPersonsByName(String one, String two) {
+    one = prepareStringInput(one);
+    two = prepareStringInput(two);
     List<Person> res = new ArrayList<Person>();
 
     String sql = "SELECT * from persons where (first_name LIKE ? AND family_name LIKE ?) OR "
@@ -1599,6 +1572,7 @@ public class DBManager {
   }
 
   public List<CollaboratorWithResponsibility> getCollaboratorsOfProject(String project) {
+    project = prepareStringInput(project);
     List<CollaboratorWithResponsibility> res = new ArrayList<CollaboratorWithResponsibility>();
     // for experiments
     String sql =
@@ -1651,6 +1625,7 @@ public class DBManager {
   }
 
   public int addExperimentToDB(String openbisIdentifier) {
+    openbisIdentifier = prepareStringInput(openbisIdentifier);
     int exists = isExpInDB(openbisIdentifier);
     if (exists < 0) {
       logger.info("Trying to add experiment " + openbisIdentifier + " to the person DB");
@@ -1676,14 +1651,15 @@ public class DBManager {
     return exists;
   }
 
-  private int isExpInDB(String id) {
-    logger.info("Looking for experiment " + id + " in the DB");
+  private int isExpInDB(String expID) {
+    expID = prepareStringInput(expID);
+    logger.info("Looking for experiment " + expID + " in the DB");
     String sql = "SELECT * from experiments WHERE openbis_experiment_identifier = ?";
     int res = -1;
     Connection conn = login();
     try {
       PreparedStatement statement = conn.prepareStatement(sql);
-      statement.setString(1, id);
+      statement.setString(1, expID);
       ResultSet rs = statement.executeQuery();
       if (rs.next()) {
         logger.info("project found!");
@@ -1698,6 +1674,7 @@ public class DBManager {
   }
 
   public void addPersonToExperiment(int expID, int personID, String role) {
+    role = prepareStringInput(role);
     if (expID == 0 || personID == 0)
       return;
 
@@ -1746,6 +1723,7 @@ public class DBManager {
   }
 
   public int getProjectIDFromCode(String code) {
+    code = prepareStringInput(code);
     int res = -1;
     String sql = "SELECT id from projects WHERE openbis_project_identifier LIKE ?";
     Connection conn = login();
@@ -1766,6 +1744,7 @@ public class DBManager {
   }
 
   public void removePersonFromProject(int id, String role) {
+    role = prepareStringInput(role);
     logger.info("Trying to remove person with role " + role + " from project with id " + id);
     String sql = "DELETE FROM projects_persons WHERE project_id = ? AND project_role = ?";
     Connection conn = login();
@@ -1802,6 +1781,7 @@ public class DBManager {
   }
 
   public void addOrUpdatePersonToExperiment(int experimentID, int personID, String role) {
+    role = prepareStringInput(role);
     if (!hasPersonRoleInExperiment(personID, experimentID, role)) {
       logger.info("Trying to add person with role " + role + " to an experiment.");
       if (!roleForExperimentTaken(experimentID, role)) {

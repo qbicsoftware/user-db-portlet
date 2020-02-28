@@ -18,17 +18,15 @@ package life.qbic.userdb.views;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import com.vaadin.data.validator.StringLengthValidator;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.themes.ValoTheme;
-
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.portal.Styles;
 
@@ -58,16 +56,18 @@ public class AffiliationInput extends FormLayout {
   Logger logger = LogManager.getLogger(AffiliationInput.class);
 
   public AffiliationInput(Set<String> institutes, List<String> faculties,
-      Map<String, Integer> personMap) {
+      Map<String, Integer> personMap, Map<String, Integer> colNamesToMaxLength) {
     setMargin(true);
 
     this.personMap = personMap;
 
-    groupName = new TextField("Group Name");
+    groupName =
+        prepSizeValidationForTextField("Group Name", colNamesToMaxLength.get("group_name"));
     groupName.setWidth("300px");
     addComponent(groupName);
 
-    acronym = new TextField("Acronym");
+    acronym =
+        prepSizeValidationForTextField("Acronym", colNamesToMaxLength.get("group_acronym"));
     acronym.setWidth("300px");
     addComponent(Styles.questionize(acronym,
         "Short acronym of the lowest level of this affiliation, "
@@ -82,8 +82,9 @@ public class AffiliationInput extends FormLayout {
     // institute.setRequired(true);
     addComponent(Styles.questionize(institute, "Select existing institutes or input a new one.",
         "Institute"));
-    
-    organization = new TextField("Organization");
+
+    organization = prepSizeValidationForTextField("Organization",
+        colNamesToMaxLength.get("umbrella_organization"));
     organization.setWidth("300px");
     organization.setRequired(true);
     organization.setInputPrompt("...or university name");
@@ -116,27 +117,28 @@ public class AffiliationInput extends FormLayout {
     head.setStyleName(ValoTheme.COMBOBOX_SMALL);
     addComponent(Styles.questionize(head, "Head of this affiliation.", "Head"));
 
-    street = new TextField("Street");
+    street = prepSizeValidationForTextField("Street", colNamesToMaxLength.get("street"));
     street.setWidth("300px");
     street.setRequired(true);
     addComponent(street);
 
-    zipCode = new TextField("Zip Code");
+    zipCode =
+        prepSizeValidationForTextField("Zip Code", colNamesToMaxLength.get("zip_code"));
     zipCode.setWidth("300px");
     zipCode.setRequired(true);
     addComponent(zipCode);
 
-    city = new TextField("City");
+    city = prepSizeValidationForTextField("City", colNamesToMaxLength.get("city"));
     city.setWidth("300px");
     city.setRequired(true);
     addComponent(city);
 
-    country = new TextField("Country");
+    country = prepSizeValidationForTextField("Country", colNamesToMaxLength.get("country"));
     country.setWidth("300px");
     country.setRequired(true);
     addComponent(country);
 
-    webpage = new TextField("Webpage");
+    webpage = prepSizeValidationForTextField("Webpage", colNamesToMaxLength.get("webpage"));
     webpage.setWidth("300px");
     // TODO webpage formats are difficult
     // webpage.addValidator(
@@ -145,6 +147,15 @@ public class AffiliationInput extends FormLayout {
 
     commit = new Button("Register Affiliation");
     addComponent(commit);
+  }
+
+  private TextField prepSizeValidationForTextField(String name, int maxLength) {
+    TextField t = new TextField(name);
+    StringLengthValidator v =
+        new StringLengthValidator(name + " needs to contain less than " + maxLength + " symbols.");
+    v.setMaxLength(maxLength);
+    t.addValidator(v);
+    return t;
   }
 
   public boolean isValid() {
@@ -202,7 +213,7 @@ public class AffiliationInput extends FormLayout {
   public ComboBox getInstituteField() {
     return institute;
   }
-  
+
   public void hideRegisterButton() {
     commit.setEnabled(false);
     commit.setVisible(false);
