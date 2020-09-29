@@ -6,13 +6,17 @@
 	<parent>
 		<groupId>life.qbic</groupId>
 		<artifactId>portlet-parent-pom</artifactId>
-		<version>1.4.0</version>
+		<version>3.1.0</version>
 	</parent>
 	<artifactId>user-db-portlet</artifactId>
-	<version>1.8.0</version>
+	<version>1.8.1</version>
 	<name>User Database Portlet</name>
 	<url>http://github.com/qbicsoftware/user-db-portlet</url>
 	<packaging>war</packaging>
+	<properties>
+		<vaadin.version>7.7.8</vaadin.version>
+		<vaadin.plugin.version>7.7.8</vaadin.plugin.version>
+	</properties>
 	<!-- we only need to tell maven where to find our parent pom and other QBiC 
 		dependencies -->
 	<repositories>
@@ -27,7 +31,7 @@
 			</snapshots>
 			<id>nexus-snapshots</id>
 			<name>QBiC Snapshots</name>
-			<url>https://qbic-repo.am10.uni-tuebingen.de/repository/maven-snapshots</url>
+			<url>http://qbic-repo.qbic.uni-tuebingen.de:8081/repository/maven-snapshots</url>
 		</repository>
 		<repository>
 			<releases>
@@ -40,7 +44,7 @@
 			</snapshots>
 			<id>nexus-releases</id>
 			<name>QBiC Releases</name>
-			<url>https://qbic-repo.am10.uni-tuebingen.de/repository/maven-releases</url>
+			<url>http://qbic-repo.qbic.uni-tuebingen.de:8081/repository/maven-releases</url>
 		</repository>
 	</repositories>
 	<!-- To avoid inconsistencies across projects, plase check which librares 
