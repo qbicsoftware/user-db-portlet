@@ -88,7 +88,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
     boolean success = true;
     manager = ConfigurationManagerFactory.getInstance();
     tmpFolder = manager.getTmpFolder();
-
     if (PortalUtils.isLiferayPortlet()) {
       // read in the configuration file
 
@@ -109,9 +108,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
     // establish connection to the OpenBIS API
     try {
       logger.debug("trying to connect to openbis");
-
+      final String openbisURL = manager.getDataSourceUrl() + "/openbis/openbis";
       this.openbis = new OpenBisClient(manager.getDataSourceUser(), manager.getDataSourcePassword(),
-          manager.getDataSourceUrl());
+          openbisURL);
       this.openbis.login();
     } catch (Exception e) {
       success = false;
