@@ -17,7 +17,6 @@ package life.qbic.userdb.views;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.Validator;
@@ -33,11 +32,9 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.themes.ValoTheme;
-import ch.systemsx.cisd.common.collection.RegExValidator;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.Person;
 import life.qbic.portal.Styles;
-import life.qbic.userdb.helpers.EmailFreeValidator;
 import life.qbic.userdb.helpers.RegExHelper;
 
 public class PersonInput extends HorizontalLayout {
