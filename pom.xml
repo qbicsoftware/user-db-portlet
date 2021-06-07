@@ -9,7 +9,7 @@
 		<version>3.1.4</version>
 	</parent>
 	<artifactId>user-db-portlet</artifactId>
-	<version>1.8.2</version>
+	<version>1.9.0</version>
 	<name>User Database Portlet</name>
 	<url>http://github.com/qbicsoftware/user-db-portlet</url>
 	<packaging>war</packaging>

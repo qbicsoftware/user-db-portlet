@@ -41,7 +41,7 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import life.qbic.datamodel.identifiers.SampleCodeFunctions;
+
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -49,7 +49,6 @@ import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.portal.Styles;
 import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
-import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.TimeUtils;
 
 public class ProjectView extends VerticalLayout {
