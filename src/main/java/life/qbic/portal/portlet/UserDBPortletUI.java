@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -262,9 +263,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
                 dbControl.getCollaboratorsOfProject(project);
             // get openbis experiments and type
             Map<String, String> existingExps = new HashMap<String, String>();
-            for (Experiment e : openbis.getExperimentsForProject2(project)) {
-              String type = expTypeCodeTranslation.get(e.getExperimentTypeCode());
-              String id = e.getIdentifier();
+            for (Experiment e : openbis.getExperimentsOfProjectByCode(project)) {
+              String type = expTypeCodeTranslation.get(e.getType().getCode());
+              String id = e.getIdentifier().getIdentifier();
               if (type != null)
                 existingExps.put(id, type);
             }
