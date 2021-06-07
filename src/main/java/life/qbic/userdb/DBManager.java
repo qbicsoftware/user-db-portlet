@@ -778,7 +778,7 @@ public class DBManager {
 
   public Map<String, Integer> getPersonMap() {
     Map<String, Integer> res = new HashMap<String, Integer>();
-    String sql = "SELECT * FROM persons";
+    String sql = "SELECT * FROM person";
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -787,7 +787,7 @@ public class DBManager {
       while (rs.next()) {
         int id = rs.getInt("id");
         String first = rs.getString("first_name");
-        String last = rs.getString("family_name");
+        String last = rs.getString("last_name");
         res.put(first + " " + last, id);
       }
     } catch (SQLException e) {
@@ -1216,12 +1216,12 @@ public class DBManager {
    */
   public List<Person> getPersonWithAffiliations(Integer personID) {
     List<Person> res = new ArrayList<Person>();
-    String lnk = "persons_organizations";
+    String lnk = "person_affiliation";
     String sql =
-        "SELECT persons.*, organizations.id, organizations.group_name, organizations.group_acronym, "
-            + lnk + ".occupation FROM persons, organizations, " + lnk + " WHERE persons.id = "
-            + Integer.toString(personID) + " AND persons.id = " + lnk
-            + ".person_id and organizations.id = " + lnk + ".organization_id";
+        "SELECT person.*, affiliation.id, affiliation.organization FROM person, affiliation, "
+            + lnk + " WHERE person.id = " + Integer.toString(personID) + " AND person.id = " + lnk
+            + ".person_id AND affiliation.id = " + lnk + ".affiliation_id";
+    System.out.println(sql);
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -1229,23 +1229,17 @@ public class DBManager {
       ResultSet rs = statement.executeQuery();
       List<Affiliation> affiliations = new ArrayList<Affiliation>();
       while (rs.next()) {
-        affiliations.add(getAffiliationWithID(rs.getInt("organizations.id")));
-        int id = rs.getInt("id");
-        String username = rs.getString("username");
+        affiliations.add(getAffiliationWithID(rs.getInt("affiliation.id")));
+        String username = rs.getString("user_id");
         String title = rs.getString("title");
         String first = rs.getString("first_name");
-        String last = rs.getString("family_name");
+        String last = rs.getString("last_name");
         String eMail = rs.getString("email");
-        String phone = rs.getString("phone");
-        int affiliationID = rs.getInt("organizations.id");
-        String affiliation = rs.getString("group_name");
-        String acr = rs.getString("group_acronym");
-        if (acr != null && !acr.isEmpty()) {
-          affiliation += " (" + rs.getString("group_acronym") + ")";
-        }
-        String role = rs.getString(lnk + ".occupation");
-        res.add(new Person(username, title, first, last, eMail, phone, affiliationID, affiliation,
-            role, affiliations));
+        int affiliationID = rs.getInt("affiliation.id");
+        String affiliation = rs.getString("organization");
+        // set phone number empty due to new table
+        res.add(new Person(username, title, first, last, eMail, "", affiliationID, affiliation,
+            "Member", affiliations));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1499,8 +1493,8 @@ public class DBManager {
     Map<String, ProjectInfo> res = new HashMap<String, ProjectInfo>();
     // since there are at the moment 2 different roles, this query will return two rows per project
     String sql =
-        "SELECT projects.*, projects.id, projects_persons.*, persons.first_name, persons.family_name FROM projects INNER JOIN projects_persons ON "
-            + "projects.id = projects_persons.project_id INNER JOIN persons ON projects_persons.person_id = persons.id";
+        "SELECT projects.*, projects.id, projects_persons.*, person.first_name, person.last_name FROM projects INNER JOIN projects_persons ON "
+            + "projects.id = projects_persons.project_id INNER JOIN person ON projects_persons.person_id = person.id";
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -1509,9 +1503,16 @@ public class DBManager {
       while (rs.next()) {
         String projectID = rs.getString("openbis_project_identifier");
         String[] openbisIDSplit = projectID.split("/");
-        String project = openbisIDSplit[2];
+        String project = "";
+        try {
+          project = openbisIDSplit[2];
+        } catch (ArrayIndexOutOfBoundsException e) {
+          logger
+              .warn("Project identifier " + projectID + " is not correct. Skipping this project.");
+          continue;
+        }
         String role = rs.getString("project_role");
-        String name = rs.getString("first_name") + " " + rs.getString("family_name");
+        String name = rs.getString("first_name") + " " + rs.getString("last_name");
         if (!res.containsKey(projectID)) {
           // first result row
           String space = openbisIDSplit[1];
@@ -1576,8 +1577,8 @@ public class DBManager {
     List<CollaboratorWithResponsibility> res = new ArrayList<CollaboratorWithResponsibility>();
     // for experiments
     String sql =
-        "SELECT experiments.*, experiments.id, experiments_persons.*, persons.first_name, persons.family_name FROM experiments INNER JOIN experiments_persons ON "
-            + "experiments.id = experiments_persons.experiment_id INNER JOIN persons ON experiments_persons.person_id = persons.id "
+        "SELECT experiments.*, experiments.id, experiments_persons.*, person.first_name, person.last_name FROM experiments INNER JOIN experiments_persons ON "
+            + "experiments.id = experiments_persons.experiment_id INNER JOIN person ON experiments_persons.person_id = person.id "
             + "WHERE openbis_experiment_identifier LIKE ?";
     Connection conn = login();
     PreparedStatement statement = null;
@@ -1591,7 +1592,7 @@ public class DBManager {
         int id = rs.getInt("experiments.id");
         String exp = openbisIDSplit[3];
         String role = rs.getString("experiment_role");
-        String name = rs.getString("first_name") + " " + rs.getString("family_name");
+        String name = rs.getString("first_name") + " " + rs.getString("last_name");
         res.add(new CollaboratorWithResponsibility(id, name, openbisID, exp, role));
       }
     } catch (SQLException e) {
