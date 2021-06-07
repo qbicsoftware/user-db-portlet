@@ -148,57 +148,49 @@ public class UserDBPortletUI extends QBiCPortletUI {
       options.setSelectedTab(rightsMissingTab);
       options.setEnabled(false);
     } else {
-      // affiMap = dbControl.getAffiliationMap();
       personMap = dbControl.getPersonMap();
-//      Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
 
-      // Set<String> instituteNames = dbControl.getInstituteNames();
-      // List<String> facultyEnums =
-      // dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty");
-      // List<String> affiliationRoles =
-      // dbControl.getPossibleEnumsForColumnsInTable("persons_organizations", "occupation");
-      // List<String> titleEnums = dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
-
-      // PersonInput addUserTab =
-      // new PersonInput(titleEnums, affiMap, affiliationRoles, colNamesToMaxLength,
-      // new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength));
-      // options.addTab(addUserTab, "New Person");
-      //
-      // AffiliationInput addAffilTab =
-      // new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength);
-      // options.addTab(addAffilTab, "New Affiliation");
-      //
-      //
-      // SearchView searchView = new SearchView();
-      // options.addTab(searchView, "Search Entries");
-      //
-      // List<Affiliation> affiTable = dbControl.getAffiliationTable();
-      // Map<Integer, Pair<String, String>> affiPeople = new HashMap<Integer, Pair<String,
-      // String>>();
-      // for (Affiliation a : affiTable) {
-      // int id = a.getID();
-      // affiPeople.put(id,
-      // new ImmutablePair<String, String>(a.getContactPerson(), a.getHeadName()));
-      // }
-
-      // PersonBatchUpload batchTab = new PersonBatchUpload(titleEnums, affiliationRoles, affiMap);
-      // options.addTab(batchTab, "Upload Person Table");
-      //
-      // AffiliationVIPTab vipTab = new AffiliationVIPTab(personMap, affiMap, affiPeople);
-      // options.addTab(vipTab, "Edit Affiliation VIPs");
-      //
-      // MultiAffiliationTab multiAffilTab =
-      // new MultiAffiliationTab(personMap, affiMap, affiliationRoles);
-      // options.addTab(multiAffilTab, "Additional Person-Affiliations");
-      //
-      // if (!admin) {
-      // options.getTab(multiAffilTab).setEnabled(false);
-      // options.getTab(vipTab).setEnabled(false);
-      //
-      // // options.getTab(3).setEnabled(false);
-      // // options.getTab(4).setEnabled(false);
-      // }
-
+      /*
+       * Removed since 1.8.0 as most of the functionality moved to offer-manager-portlet 2
+       * 
+       * 
+       * affiMap = dbControl.getAffiliationMap();
+       * 
+       * Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
+       * 
+       * Set<String> instituteNames = dbControl.getInstituteNames(); List<String> facultyEnums =
+       * dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty"); List<String>
+       * affiliationRoles = dbControl.getPossibleEnumsForColumnsInTable("persons_organizations",
+       * "occupation"); List<String> titleEnums =
+       * dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
+       * 
+       * PersonInput addUserTab = new PersonInput(titleEnums, affiMap, affiliationRoles,
+       * colNamesToMaxLength, new AffiliationInput(instituteNames, facultyEnums, personMap,
+       * colNamesToMaxLength)); options.addTab(addUserTab, "New Person");
+       * 
+       * AffiliationInput addAffilTab = new AffiliationInput(instituteNames, facultyEnums,
+       * personMap, colNamesToMaxLength); options.addTab(addAffilTab, "New Affiliation");
+       * 
+       * SearchView searchView = new SearchView(); options.addTab(searchView, "Search Entries");
+       * 
+       * List<Affiliation> affiTable = dbControl.getAffiliationTable(); Map<Integer, Pair<String,
+       * String>> affiPeople = new HashMap<Integer, Pair<String, String>>(); for (Affiliation a :
+       * affiTable) { int id = a.getID(); affiPeople.put(id, new ImmutablePair<String,
+       * String>(a.getContactPerson(), a.getHeadName())); } PersonBatchUpload batchTab = new
+       * PersonBatchUpload(titleEnums, affiliationRoles, affiMap); options.addTab(batchTab,
+       * "Upload Person Table");
+       * 
+       * AffiliationVIPTab vipTab = new AffiliationVIPTab(personMap, affiMap, affiPeople);
+       * options.addTab(vipTab, "Edit Affiliation VIPs");
+       * 
+       * MultiAffiliationTab multiAffilTab = new MultiAffiliationTab(personMap, affiMap,
+       * affiliationRoles); options.addTab(multiAffilTab, "Additional Person-Affiliations");
+       * 
+       * if (!admin) { options.getTab(multiAffilTab).setEnabled(false);
+       * options.getTab(vipTab).setEnabled(false);
+       * 
+       * options.getTab(3).setEnabled(false); options.getTab(4).setEnabled(false); }
+       */
       String userID = "";
       if (PortalUtils.isLiferayPortlet()) {
         logger.info("DB Tools running on Liferay, fetching user ID.");
