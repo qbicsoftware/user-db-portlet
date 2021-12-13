@@ -6,13 +6,17 @@
 	<parent>
 		<groupId>life.qbic</groupId>
 		<artifactId>portlet-parent-pom</artifactId>
-		<version>1.4.0</version>
+		<version>1.7.1</version>
 	</parent>
 	<artifactId>user-db-portlet</artifactId>
 	<version>1.8.0</version>
 	<name>User Database Portlet</name>
 	<url>http://github.com/qbicsoftware/user-db-portlet</url>
 	<packaging>war</packaging>
+	<properties>
+		<vaadin.version>7.7.28</vaadin.version>
+		<log4j.version>2.15.0</log4j.version>
+	</properties>
 	<!-- we only need to tell maven where to find our parent pom and other QBiC 
 		dependencies -->
 	<repositories>
