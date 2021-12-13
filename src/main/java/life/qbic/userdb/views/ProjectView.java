@@ -15,20 +15,6 @@
  *******************************************************************************/
 package life.qbic.userdb.views;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.tepi.filtertable.FilterTable;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.FileDownloader;
@@ -41,8 +27,16 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import ch.systemsx.cisd.common.concurrent.TimerUtilities;
-import life.qbic.datamodel.identifiers.SampleCodeFunctions;
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -50,8 +44,11 @@ import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.portal.Styles;
 import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
-import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.TimeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.tepi.filtertable.FilterTable;
 
 public class ProjectView extends VerticalLayout {
   Logger logger = LogManager.getLogger(ProjectView.class);

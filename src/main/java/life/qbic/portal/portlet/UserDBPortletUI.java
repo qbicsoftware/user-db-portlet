@@ -1,18 +1,7 @@
 package life.qbic.portal.portlet;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserGroup;
 import com.vaadin.annotations.Theme;
@@ -22,14 +11,21 @@ import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Button.ClickListener;
-import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Experiment;
-import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Project;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -50,6 +46,9 @@ import life.qbic.userdb.views.PersonBatchUpload;
 import life.qbic.userdb.views.PersonInput;
 import life.qbic.userdb.views.ProjectView;
 import life.qbic.userdb.views.SearchView;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Entry point for portlet user-db-portlet. This class derives from {@link QBiCPortletUI}, which is
@@ -87,7 +86,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
     boolean success = true;
     manager = ConfigurationManagerFactory.getInstance();
     tmpFolder = manager.getTmpFolder();
-
     if (PortalUtils.isLiferayPortlet()) {
       // read in the configuration file
 
@@ -108,9 +106,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
     // establish connection to the OpenBIS API
     try {
       logger.debug("trying to connect to openbis");
-
+      final String openbisURL = manager.getDataSourceUrl() + "/openbis/openbis";
       this.openbis = new OpenBisClient(manager.getDataSourceUser(), manager.getDataSourcePassword(),
-          manager.getDataSourceUrl());
+          openbisURL);
       this.openbis.login();
     } catch (Exception e) {
       success = false;
@@ -151,56 +149,49 @@ public class UserDBPortletUI extends QBiCPortletUI {
       options.setSelectedTab(rightsMissingTab);
       options.setEnabled(false);
     } else {
-      affiMap = dbControl.getAffiliationMap();
       personMap = dbControl.getPersonMap();
-      Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
 
-      Set<String> instituteNames = dbControl.getInstituteNames();
-      List<String> facultyEnums =
-          dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty");
-      List<String> affiliationRoles =
-          dbControl.getPossibleEnumsForColumnsInTable("persons_organizations", "occupation");
-      List<String> titleEnums = dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
-
-      PersonInput addUserTab =
-          new PersonInput(titleEnums, affiMap, affiliationRoles, colNamesToMaxLength,
-              new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength));
-      options.addTab(addUserTab, "New Person");
-
-      AffiliationInput addAffilTab =
-          new AffiliationInput(instituteNames, facultyEnums, personMap, colNamesToMaxLength);
-      options.addTab(addAffilTab, "New Affiliation");
-
-
-      SearchView searchView = new SearchView();
-      options.addTab(searchView, "Search Entries");
-
-      List<Affiliation> affiTable = dbControl.getAffiliationTable();
-      Map<Integer, Pair<String, String>> affiPeople = new HashMap<Integer, Pair<String, String>>();
-      for (Affiliation a : affiTable) {
-        int id = a.getID();
-        affiPeople.put(id,
-            new ImmutablePair<String, String>(a.getContactPerson(), a.getHeadName()));
-      }
-
-      PersonBatchUpload batchTab = new PersonBatchUpload(titleEnums, affiliationRoles, affiMap);
-      options.addTab(batchTab, "Upload Person Table");
-
-      AffiliationVIPTab vipTab = new AffiliationVIPTab(personMap, affiMap, affiPeople);
-      options.addTab(vipTab, "Edit Affiliation VIPs");
-
-      MultiAffiliationTab multiAffilTab =
-          new MultiAffiliationTab(personMap, affiMap, affiliationRoles);
-      options.addTab(multiAffilTab, "Additional Person-Affiliations");
-
-      if (!admin) {
-        options.getTab(multiAffilTab).setEnabled(false);
-        options.getTab(vipTab).setEnabled(false);
-
-        // options.getTab(3).setEnabled(false);
-        // options.getTab(4).setEnabled(false);
-      }
-
+      /*
+       * Removed since 1.8.0 as most of the functionality moved to offer-manager-portlet 2
+       * 
+       * 
+       * affiMap = dbControl.getAffiliationMap();
+       * 
+       * Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
+       * 
+       * Set<String> instituteNames = dbControl.getInstituteNames(); List<String> facultyEnums =
+       * dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty"); List<String>
+       * affiliationRoles = dbControl.getPossibleEnumsForColumnsInTable("persons_organizations",
+       * "occupation"); List<String> titleEnums =
+       * dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
+       * 
+       * PersonInput addUserTab = new PersonInput(titleEnums, affiMap, affiliationRoles,
+       * colNamesToMaxLength, new AffiliationInput(instituteNames, facultyEnums, personMap,
+       * colNamesToMaxLength)); options.addTab(addUserTab, "New Person");
+       * 
+       * AffiliationInput addAffilTab = new AffiliationInput(instituteNames, facultyEnums,
+       * personMap, colNamesToMaxLength); options.addTab(addAffilTab, "New Affiliation");
+       * 
+       * SearchView searchView = new SearchView(); options.addTab(searchView, "Search Entries");
+       * 
+       * List<Affiliation> affiTable = dbControl.getAffiliationTable(); Map<Integer, Pair<String,
+       * String>> affiPeople = new HashMap<Integer, Pair<String, String>>(); for (Affiliation a :
+       * affiTable) { int id = a.getID(); affiPeople.put(id, new ImmutablePair<String,
+       * String>(a.getContactPerson(), a.getHeadName())); } PersonBatchUpload batchTab = new
+       * PersonBatchUpload(titleEnums, affiliationRoles, affiMap); options.addTab(batchTab,
+       * "Upload Person Table");
+       * 
+       * AffiliationVIPTab vipTab = new AffiliationVIPTab(personMap, affiMap, affiPeople);
+       * options.addTab(vipTab, "Edit Affiliation VIPs");
+       * 
+       * MultiAffiliationTab multiAffilTab = new MultiAffiliationTab(personMap, affiMap,
+       * affiliationRoles); options.addTab(multiAffilTab, "Additional Person-Affiliations");
+       * 
+       * if (!admin) { options.getTab(multiAffilTab).setEnabled(false);
+       * options.getTab(vipTab).setEnabled(false);
+       * 
+       * options.getTab(3).setEnabled(false); options.getTab(4).setEnabled(false); }
+       */
       String userID = "";
       if (PortalUtils.isLiferayPortlet()) {
         logger.info("DB Tools running on Liferay, fetching user ID.");
@@ -213,19 +204,25 @@ public class UserDBPortletUI extends QBiCPortletUI {
       }
       Map<String, ProjectInfo> userProjects = new HashMap<String, ProjectInfo>();
 
-      List<Project> openbisProjects = new ArrayList<Project>();
+      List<Project> openbisProjectsForUser = new ArrayList<Project>();
+      Set<String> spaces = new HashSet<>(openbis.getUserSpaces(userID));
 
-      openbisProjects = openbis.getOpenbisInfoService()
-          .listProjectsOnBehalfOfUser(openbis.getSessionToken(), userID);
+      List<Project> allOpenbisProjects = openbis.listProjects();
+      for (Project p : allOpenbisProjects) {
+        String space = p.getSpace().getCode();
+        if (spaces.contains(space)) {
+          openbisProjectsForUser.add(p);
+        }
+      }
 
       Map<String, ProjectInfo> dbProjects = dbControl.getProjectMap();
-      for (Project p : openbisProjects) {
+      for (Project p : openbisProjectsForUser) {
         String desc = Objects.toString(p.getDescription(), "");
         desc = desc.replaceAll("\n+", ". ");
-        String projectID = p.getIdentifier();
+        String projectID = p.getIdentifier().getIdentifier();
         String code = p.getCode();
         if (dbProjects.get(projectID) == null)
-          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, desc, "", -1));
+          userProjects.put(projectID, new ProjectInfo(p.getSpace().getCode(), code, desc, "", -1));
         else {
           ProjectInfo info = dbProjects.get(projectID);
           info.setDescription(desc);
@@ -242,8 +239,119 @@ public class UserDBPortletUI extends QBiCPortletUI {
       options.addTab(projectView, "Projects");
       options.getTab(projectView).setEnabled(!userProjects.isEmpty());
 
-      initPortletToDBFunctionality(addAffilTab, addUserTab, batchTab, multiAffilTab, vipTab,
-          searchView, projectView);
+      // initPortletToDBFunctionality(addAffilTab, addUserTab, batchTab, multiAffilTab, vipTab,
+      // searchView, projectView);
+      projectView.getProjectTable().addValueChangeListener(new ValueChangeListener() {
+
+        private Map<String, String> expTypeCodeTranslation = new HashMap<String, String>() {
+          {
+            put("Q_EXPERIMENTAL_DESIGN", "Patients/Sources");
+            put("Q_SAMPLE_EXTRACTION", "Sample Extracts");
+            put("Q_SAMPLE_PREPARATION", "Sample Preparations");
+            put("Q_MS_MEASUREMENT", "Mass Spectrometry");
+            put("Q_NGS_MEASUREMENT", "NGS Sequencing");
+          };
+        };
+
+        @Override
+        public void valueChange(ValueChangeEvent event) {
+          Object item = projectView.getProjectTable().getValue();
+          if (item != null) {
+            String project = item.toString();
+            // get collaborators associated to openbis experiments
+            List<CollaboratorWithResponsibility> collaborators =
+                dbControl.getCollaboratorsOfProject(project);
+            // get openbis experiments and type
+            Map<String, String> existingExps = new HashMap<String, String>();
+            for (Experiment e : openbis.getExperimentsOfProjectByCode(project)) {
+              String type = expTypeCodeTranslation.get(e.getType().getCode());
+              String id = e.getIdentifier().getIdentifier();
+              if (type != null)
+                existingExps.put(id, type);
+            }
+            // add types for experiments with existing collaborators
+            for (CollaboratorWithResponsibility c : collaborators) {
+              String identifier = c.getOpenbisIdentifier();
+              c.setType(existingExps.get(identifier));
+              existingExps.remove(identifier);
+            }
+            // add empty entries and type for applicable experiments without collaborators
+            for (String expID : existingExps.keySet()) {
+              String code = expID.split("/")[3];
+              CollaboratorWithResponsibility c =
+                  new CollaboratorWithResponsibility(-1, "", expID, code, "Contact");
+              c.setType(existingExps.get(expID));
+              collaborators.add(c);
+            }
+            projectView.setCollaboratorsOfProject(collaborators);
+
+            Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
+            Person manager = getPersonOrNull(projectMap.get(item).getManager());
+            Person contact = getPersonOrNull(projectMap.get(item).getContact());
+
+            projectView.handleProjectValueChange(item, investigator, contact, manager);
+          } else {
+            projectView.handleProjectDeselect();
+          }
+        }
+
+        private Person getPersonOrNull(String name) {
+          if (personMap.get(name) != null) {
+            return dbControl.getPersonWithAffiliations(personMap.get(name)).get(0);
+          }
+          return null;
+        }
+      });
+
+      projectView.getInfoCommitButton().addClickListener(new ClickListener() {
+
+        @Override
+        public void buttonClick(ClickEvent event) {
+          ProjectInfo info = projectView.getEditedInfo();
+          if (info != null) {
+            String code = info.getProjectCode();
+            int id = info.getProjectID();
+            if (id < 1)
+              id = dbControl.addProjectToDB("/" + info.getSpace() + "/" + code,
+                  info.getSecondaryName());
+            else
+              dbControl.addOrChangeSecondaryNameForProject(id, info.getSecondaryName());
+            if (info.getInvestigator() == null || info.getInvestigator().isEmpty())
+              dbControl.removePersonFromProject(id, "PI");
+            else
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getInvestigator()), "PI");
+            if (info.getContact() == null || info.getContact().isEmpty())
+              dbControl.removePersonFromProject(id, "Contact");
+            else
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getContact()), "Contact");
+            if (info.getManager() == null || info.getManager().isEmpty())
+              dbControl.removePersonFromProject(id, "Manager");
+            else
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getManager()), "Manager");
+            projectView.updateChangedInfo(info);
+          }
+        }
+      });;
+      projectView.getPeopleCommitButton().addClickListener(new ClickListener() {
+
+        @Override
+        public void buttonClick(ClickEvent event) {
+          List<CollaboratorWithResponsibility> links = projectView.getNewResponsibilities();
+          for (CollaboratorWithResponsibility c : links) {
+            int experimentID = c.getExperimentID();
+            if (experimentID < 1)
+              experimentID = dbControl.addExperimentToDB(c.getOpenbisIdentifier());
+            String name = c.getPerson();
+            int personID = -1;
+            if (personMap.get(name) != null)
+              personID = personMap.get(name);
+            if (personID < 1)
+              dbControl.removePersonFromExperiment(experimentID);
+            else
+              dbControl.addOrUpdatePersonToExperiment(experimentID, personID, "Contact");
+          }
+        }
+      });;
     }
   }
 
@@ -253,8 +361,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       res.putAll(dbControl.getColsMaxLengthsForTable("persons"));
       res.putAll(dbControl.getColsMaxLengthsForTable("organizations"));
     } catch (SQLException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.error(e.toString());
     }
     return res;
   }
@@ -271,8 +378,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
         }
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.error("Could not fetch user groups. User won't be able to use portlet.");
+      logger.error(e.toString());
     }
     return false;
   }
@@ -292,8 +399,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
           }
         }
       } catch (Exception e) {
-        e.printStackTrace();
         logger.error("Could not fetch user groups. User won't be able to use portlet.");
+        logger.error(e.toString());
       }
       return false;
     }
@@ -338,118 +445,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
         }
       }
     });
-
-    projects.getProjectTable().addValueChangeListener(new ValueChangeListener() {
-
-      private Map<String, String> expTypeCodeTranslation = new HashMap<String, String>() {
-        {
-          put("Q_EXPERIMENTAL_DESIGN", "Patients/Sources");
-          put("Q_SAMPLE_EXTRACTION", "Sample Extracts");
-          put("Q_SAMPLE_PREPARATION", "Sample Preparations");
-          put("Q_MS_MEASUREMENT", "Mass Spectrometry");
-          put("Q_NGS_MEASUREMENT", "NGS Sequencing");
-        };
-      };
-
-      @Override
-      public void valueChange(ValueChangeEvent event) {
-        Object item = projects.getProjectTable().getValue();
-        if (item != null) {
-          String project = item.toString();
-          // get collaborators associated to openbis experiments
-          List<CollaboratorWithResponsibility> collaborators =
-              dbControl.getCollaboratorsOfProject(project);
-          // get openbis experiments and type
-          Map<String, String> existingExps = new HashMap<String, String>();
-          for (Experiment e : openbis.getExperimentsForProject2(project)) {
-            String type = expTypeCodeTranslation.get(e.getExperimentTypeCode());
-            String id = e.getIdentifier();
-            if (type != null)
-              existingExps.put(id, type);
-          }
-          // add types for experiments with existing collaborators
-          for (CollaboratorWithResponsibility c : collaborators) {
-            String identifier = c.getOpenbisIdentifier();
-            c.setType(existingExps.get(identifier));
-            existingExps.remove(identifier);
-          }
-          // add empty entries and type for applicable experiments without collaborators
-          for (String expID : existingExps.keySet()) {
-            String code = expID.split("/")[3];
-            CollaboratorWithResponsibility c =
-                new CollaboratorWithResponsibility(-1, "", expID, code, "Contact");
-            c.setType(existingExps.get(expID));
-            collaborators.add(c);
-          }
-          projects.setCollaboratorsOfProject(collaborators);
-
-          Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
-          Person manager = getPersonOrNull(projectMap.get(item).getManager());
-          Person contact = getPersonOrNull(projectMap.get(item).getContact());
-
-          projects.handleProjectValueChange(item, investigator, contact, manager);
-        } else {
-          projects.handleProjectDeselect();
-        }
-      }
-
-      private Person getPersonOrNull(String name) {
-        if (personMap.get(name) != null) {
-          return dbControl.getPersonWithAffiliations(personMap.get(name)).get(0);
-        }
-        return null;
-      }
-    });
-
-    projects.getInfoCommitButton().addClickListener(new ClickListener() {
-
-      @Override
-      public void buttonClick(ClickEvent event) {
-        ProjectInfo info = projects.getEditedInfo();
-        if (info != null) {
-          String code = info.getProjectCode();
-          int id = info.getProjectID();
-          if (id < 1)
-            id = dbControl.addProjectToDB("/" + info.getSpace() + "/" + code,
-                info.getSecondaryName());
-          else
-            dbControl.addOrChangeSecondaryNameForProject(id, info.getSecondaryName());
-          if (info.getInvestigator() == null || info.getInvestigator().isEmpty())
-            dbControl.removePersonFromProject(id, "PI");
-          else
-            dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getInvestigator()), "PI");
-          if (info.getContact() == null || info.getContact().isEmpty())
-            dbControl.removePersonFromProject(id, "Contact");
-          else
-            dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getContact()), "Contact");
-          if (info.getManager() == null || info.getManager().isEmpty())
-            dbControl.removePersonFromProject(id, "Manager");
-          else
-            dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getManager()), "Manager");
-          projects.updateChangedInfo(info);
-        }
-      }
-    });;
-    projects.getPeopleCommitButton().addClickListener(new ClickListener() {
-
-      @Override
-      public void buttonClick(ClickEvent event) {
-        List<CollaboratorWithResponsibility> links = projects.getNewResponsibilities();
-        for (CollaboratorWithResponsibility c : links) {
-          int experimentID = c.getExperimentID();
-          if (experimentID < 1)
-            experimentID = dbControl.addExperimentToDB(c.getOpenbisIdentifier());
-          String name = c.getPerson();
-          int personID = -1;
-          if (personMap.get(name) != null)
-            personID = personMap.get(name);
-          if (personID < 1)
-            dbControl.removePersonFromExperiment(experimentID);
-          else
-            dbControl.addOrUpdatePersonToExperiment(experimentID, personID, "Contact");
-        }
-      }
-    });;
 
     search.getSearchAffiliationButton().addClickListener(new Button.ClickListener() {
       @Override
@@ -613,8 +608,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
     try {
       Thread.sleep(1000);
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.error(e.toString());
     }
     initTabs();
   }
