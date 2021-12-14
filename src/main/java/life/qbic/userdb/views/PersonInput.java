@@ -15,8 +15,6 @@
  *******************************************************************************/
 package life.qbic.userdb.views;
 
-import java.util.List;
-import java.util.Map;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.Validator;
@@ -32,6 +30,8 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.themes.ValoTheme;
+import java.util.List;
+import java.util.Map;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.Person;
 import life.qbic.portal.Styles;
