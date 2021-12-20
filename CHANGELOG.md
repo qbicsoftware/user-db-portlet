@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.3 (2021-12-20)
+* Fix CVE-2021-45046
+* Increase log4j-version `2.16.0` -> `2.17.0`
+
 ## 1.9.2 (2021-12-15)
 * Fix CVE-2021-45046
 * Increase log4j-version `2.15.0` -> `2.16.0`
