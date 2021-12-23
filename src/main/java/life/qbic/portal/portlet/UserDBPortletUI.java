@@ -1,15 +1,7 @@
 package life.qbic.portal.portlet;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserGroup;
 import com.vaadin.annotations.Theme;
@@ -19,14 +11,21 @@ import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Button.ClickListener;
-import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Experiment;
-import ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Project;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -47,6 +46,9 @@ import life.qbic.userdb.views.PersonBatchUpload;
 import life.qbic.userdb.views.PersonInput;
 import life.qbic.userdb.views.ProjectView;
 import life.qbic.userdb.views.SearchView;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Entry point for portlet user-db-portlet. This class derives from {@link QBiCPortletUI}, which is
@@ -84,7 +86,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
     boolean success = true;
     manager = ConfigurationManagerFactory.getInstance();
     tmpFolder = manager.getTmpFolder();
-
     if (PortalUtils.isLiferayPortlet()) {
       // read in the configuration file
 
@@ -105,9 +106,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
     // establish connection to the OpenBIS API
     try {
       logger.debug("trying to connect to openbis");
-
+      final String openbisURL = manager.getDataSourceUrl() + "/openbis/openbis";
       this.openbis = new OpenBisClient(manager.getDataSourceUser(), manager.getDataSourcePassword(),
-          manager.getDataSourceUrl());
+          openbisURL);
       this.openbis.login();
     } catch (Exception e) {
       success = false;
@@ -203,19 +204,25 @@ public class UserDBPortletUI extends QBiCPortletUI {
       }
       Map<String, ProjectInfo> userProjects = new HashMap<String, ProjectInfo>();
 
-      List<Project> openbisProjects = new ArrayList<Project>();
+      List<Project> openbisProjectsForUser = new ArrayList<Project>();
+      Set<String> spaces = new HashSet<>(openbis.getUserSpaces(userID));
 
-      openbisProjects = openbis.getOpenbisInfoService()
-          .listProjectsOnBehalfOfUser(openbis.getSessionToken(), userID);
+      List<Project> allOpenbisProjects = openbis.listProjects();
+      for (Project p : allOpenbisProjects) {
+        String space = p.getSpace().getCode();
+        if (spaces.contains(space)) {
+          openbisProjectsForUser.add(p);
+        }
+      }
 
       Map<String, ProjectInfo> dbProjects = dbControl.getProjectMap();
-      for (Project p : openbisProjects) {
+      for (Project p : openbisProjectsForUser) {
         String desc = Objects.toString(p.getDescription(), "");
         desc = desc.replaceAll("\n+", ". ");
-        String projectID = p.getIdentifier();
+        String projectID = p.getIdentifier().getIdentifier();
         String code = p.getCode();
         if (dbProjects.get(projectID) == null)
-          userProjects.put(projectID, new ProjectInfo(p.getSpaceCode(), code, desc, "", -1));
+          userProjects.put(projectID, new ProjectInfo(p.getSpace().getCode(), code, desc, "", -1));
         else {
           ProjectInfo info = dbProjects.get(projectID);
           info.setDescription(desc);
@@ -256,9 +263,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
                 dbControl.getCollaboratorsOfProject(project);
             // get openbis experiments and type
             Map<String, String> existingExps = new HashMap<String, String>();
-            for (Experiment e : openbis.getExperimentsForProject2(project)) {
-              String type = expTypeCodeTranslation.get(e.getExperimentTypeCode());
-              String id = e.getIdentifier();
+            for (Experiment e : openbis.getExperimentsOfProjectByCode(project)) {
+              String type = expTypeCodeTranslation.get(e.getType().getCode());
+              String id = e.getIdentifier().getIdentifier();
               if (type != null)
                 existingExps.put(id, type);
             }
@@ -354,8 +361,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       res.putAll(dbControl.getColsMaxLengthsForTable("persons"));
       res.putAll(dbControl.getColsMaxLengthsForTable("organizations"));
     } catch (SQLException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.error(e.toString());
     }
     return res;
   }
@@ -372,8 +378,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
         }
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.error("Could not fetch user groups. User won't be able to use portlet.");
+      logger.error(e.toString());
     }
     return false;
   }
@@ -393,8 +399,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
           }
         }
       } catch (Exception e) {
-        e.printStackTrace();
         logger.error("Could not fetch user groups. User won't be able to use portlet.");
+        logger.error(e.toString());
       }
       return false;
     }
@@ -602,8 +608,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
     try {
       Thread.sleep(1000);
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      logger.error(e.toString());
     }
     initTabs();
   }

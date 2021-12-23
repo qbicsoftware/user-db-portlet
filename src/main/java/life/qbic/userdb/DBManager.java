@@ -31,8 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
 import life.qbic.datamodel.persons.Person;
@@ -40,6 +38,8 @@ import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
 import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.userdb.model.Minutes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DBManager {
   private Config config;
