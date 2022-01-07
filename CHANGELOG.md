@@ -1,5 +1,7 @@
 # Changelog
 
+## 2.0.0-SNAPSHOT (2021-12-23)
+
 ## 1.9.4 (2022-01-04)
 * Fix CVE-2021-44832
 * Increase log4j-version `2.17.0` -> `2.17.1`
