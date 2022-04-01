@@ -1,6 +1,7 @@
 # Changelog
 
-## 2.0.0-SNAPSHOT (2021-12-23)
+## 2.0.0  (2021-12-23)
+* Fix references to old tables
 
 ## 1.9.4 (2022-01-04)
 * Fix CVE-2021-44832
