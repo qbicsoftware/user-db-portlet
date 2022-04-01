@@ -63,6 +63,7 @@ public class DBManager {
     return input.trim();
   }
 
+  @Deprecated
   private void printAffiliations() {
     String sql = "SELECT * FROM organizations";
     Connection conn = login();
@@ -105,6 +106,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   private void removePersonFromAllProjects(int userID) {
     logger.info("Trying to remove all project associations of user with ID " + userID);
     String sql = "DELETE FROM projects_persons WHERE person_id = ?";
@@ -123,6 +125,7 @@ public class DBManager {
     }
   }
 
+  @Deprecated
   private void removePersonFromAllAffiliationRoles(int userID) {
     logger.info("Trying to remove all affiliation associations of user with ID " + userID);
     String sql = "DELETE FROM persons_organizations WHERE person_id = ?";
@@ -547,6 +550,7 @@ public class DBManager {
     }
   }
 
+  @Deprecated
   public Map<String, Integer> getAffiliationMap() {
     Map<String, Integer> res = new HashMap<String, Integer>();
     String sql = "SELECT * FROM organizations";
@@ -619,6 +623,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public int addNewAffiliation(Affiliation affiliation) {
     int res = -1;
     logger.info("Trying to add new affiliation to the DB");
@@ -839,6 +844,7 @@ public class DBManager {
     logout(conn);
   }
 
+  @Deprecated
   public boolean addOrUpdatePersonAffiliationConnections(int personID,
       List<PersonAffiliationConnectionInfo> newConnections) {
     Connection conn = login();
@@ -914,7 +920,7 @@ public class DBManager {
 
   public List<Integer> getPersonAffiliationIDs(int person_id) {
     List<Integer> res = new ArrayList<Integer>();
-    String sql = "SELECT * FROM persons_organizations WHERE person_id = ?";
+    String sql = "SELECT * FROM person_affiliation WHERE person_id = ?";
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -922,7 +928,7 @@ public class DBManager {
       statement.setInt(1, person_id);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        res.add(rs.getInt("organization_id"));
+        res.add(rs.getInt("affiliation_id"));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -932,6 +938,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public List<Person> getPersonTable() {
     List<Person> res = new ArrayList<Person>();
     String lnk = "persons_organizations";
@@ -967,6 +974,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public Set<String> getInstituteNames() {
     Set<String> res = new HashSet<String>();
     String sql = "SELECT institute FROM organizations";
@@ -988,6 +996,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public Affiliation getOrganizationInfosFromInstitute(String institute) {
     institute = prepareStringInput(institute);
     Affiliation res = null;
@@ -1041,6 +1050,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public Affiliation getOrganizationInfosFromOrg(String organization) {
     organization = prepareStringInput(organization);
     Affiliation res = null, maybe = null;
@@ -1077,6 +1087,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public List<Affiliation> getAffiliationTable() {
     List<Affiliation> res = new ArrayList<Affiliation>();
     String sql = "SELECT * from organizations";
@@ -1139,11 +1150,10 @@ public class DBManager {
    * @return AffiliationID, forwarded to getAffiliationWithID
    */
   public int getAffiliationIDForPersonID(Integer personID) {
-    String lnk = "persons_organizations";
-    String sql =
-        "SELECT persons.*, organizations.*, " + lnk + ".occupation FROM persons, organizations, "
-            + lnk + " WHERE persons.id = " + Integer.toString(personID) + " AND persons.id = " + lnk
-            + ".person_id and organizations.id = " + lnk + ".organization_id";
+    String lnk = "person_affiliation";
+    String sql = "SELECT person.*, affiliation.* FROM person, affiliation, " + lnk
+        + " WHERE person.id = " + Integer.toString(personID) + " AND person.id = " + lnk
+        + ".person_id and affiliation.id = " + lnk + ".affiliation_id";
     Connection conn = login();
 
     int affiliationID = -1;
@@ -1151,7 +1161,7 @@ public class DBManager {
     try (PreparedStatement statement = conn.prepareStatement(sql)) {
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        affiliationID = rs.getInt("organizations.id");
+        affiliationID = rs.getInt("affiliation.id");
 
       }
       statement.close();
@@ -1218,8 +1228,8 @@ public class DBManager {
     List<Person> res = new ArrayList<Person>();
     String lnk = "person_affiliation";
     String sql =
-        "SELECT person.*, affiliation.id, affiliation.organization FROM person, affiliation, "
-            + lnk + " WHERE person.id = " + Integer.toString(personID) + " AND person.id = " + lnk
+        "SELECT person.*, affiliation.id, affiliation.organization FROM person, affiliation, " + lnk
+            + " WHERE person.id = " + Integer.toString(personID) + " AND person.id = " + lnk
             + ".person_id AND affiliation.id = " + lnk + ".affiliation_id";
     System.out.println(sql);
     Connection conn = login();
@@ -1251,7 +1261,7 @@ public class DBManager {
 
   private Affiliation getAffiliationWithID(int id) {
     Affiliation res = null;
-    String sql = "SELECT * from organizations WHERE id = ?";
+    String sql = "SELECT * from affiliation WHERE id = ?";
 
     Connection conn = login();
     PreparedStatement statement = null;
@@ -1260,32 +1270,21 @@ public class DBManager {
       statement.setInt(1, id);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        String groupName = rs.getString("group_name");
-        String acronym = rs.getString("group_acronym");
-        if (acronym == null)
-          acronym = "";
-        String organization = rs.getString("umbrella_organization");
-        String faculty = rs.getString("faculty");
-        String institute = rs.getString("institute");
-        if (institute == null)
-          institute = "";
+        String groupName = rs.getString("organization");
+        String acronym = "";
+        String organization = rs.getString("address_addition");
+        if (organization == null) {
+          organization = "";
+        }
+        String faculty = rs.getString("category");
+        String institute = "";
         String street = rs.getString("street");
-        String zipCode = rs.getString("zip_code");
+        String zipCode = rs.getString("postal_code");
         String city = rs.getString("city");
         String country = rs.getString("country");
-        String webpage = rs.getString("webpage");
-        int contactID = rs.getInt("main_contact");
-        int headID = rs.getInt("head");
+        String webpage = "";
         String contact = null;
         String head = null;
-        if (contactID > 0) {
-          Person c = getPerson(contactID);
-          contact = c.getFirstName() + " " + c.getLastName();
-        }
-        if (headID > 0) {
-          Person h = getPerson(headID);
-          head = h.getFirstName() + " " + h.getLastName();
-        }
         res = new Affiliation(id, groupName, acronym, organization, institute, faculty, contact,
             head, street, zipCode, city, country, webpage);
       }
@@ -1299,7 +1298,7 @@ public class DBManager {
 
   public Person getPerson(int id) {
     Person res = null;
-    String sql = "SELECT * FROM persons WHERE persons.id = ?";
+    String sql = "SELECT * FROM person WHERE person.id = ?";
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -1307,15 +1306,12 @@ public class DBManager {
       statement.setInt(1, id);
       ResultSet rs = statement.executeQuery();
       while (rs.next()) {
-        String username = rs.getString("username");
+        String username = rs.getString("user_id");
         String title = rs.getString("title");
         String first = rs.getString("first_name");
-        String last = rs.getString("family_name");
+        String last = rs.getString("last_name");
         String eMail = rs.getString("email");
-        String phone = rs.getString("phone");
-        res = new Person(username, title, first, last, eMail, phone, -1, null, null);// TODO add
-                                                                                     // every
-                                                                                     // affiliation?
+        res = new Person(username, title, first, last, eMail, "", -1, null, null);
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1340,6 +1336,7 @@ public class DBManager {
       }
   }
 
+  @Deprecated
   public void setAffiliationVIP(int affi, int person, String role) {
     role = prepareStringInput(role);
     logger.info("Trying to set/change affiliation-specific role " + role);
@@ -1365,8 +1362,8 @@ public class DBManager {
     two = prepareStringInput(two);
     List<Person> res = new ArrayList<Person>();
 
-    String sql = "SELECT * from persons where (first_name LIKE ? AND family_name LIKE ?) OR "
-        + "(family_name LIKE ? AND first_name LIKE ?)";
+    String sql = "SELECT * from person where (first_name LIKE ? AND last_name LIKE ?) OR "
+        + "(last_name LIKE ? AND first_name LIKE ?)";
     Connection conn = login();
     PreparedStatement statement = null;
     try {
@@ -1380,13 +1377,12 @@ public class DBManager {
         int id = rs.getInt("id");
         List<Person> found = getPersonWithAffiliations(id);
         if (found.isEmpty()) {
-          String username = rs.getString("username");
+          String username = rs.getString("user_id");
           String title = rs.getString("title");
           String first = rs.getString("first_name");
-          String last = rs.getString("family_name");
+          String last = rs.getString("last_name");
           String eMail = rs.getString("email");
-          String phone = rs.getString("phone");
-          res.add(new Person(username, title, first, last, eMail, phone, -1, "N/A", "N/A"));
+          res.add(new Person(username, title, first, last, eMail, "", -1, "N/A", "N/A"));
         } else
           res.add(found.get(0));// TODO set all of them!
       }
@@ -1419,12 +1415,12 @@ public class DBManager {
         int id = rs.getInt("id");
         List<Person> found = getPersonWithAffiliations(id);
         if (found.isEmpty()) {
-          String username = rs.getString("username");
+          String username = rs.getString("user_id");
           String title = rs.getString("title");
           String first = rs.getString("first_name");
-          String last = rs.getString("family_name");
+          String last = rs.getString("last_name");
           String eMail = rs.getString("email");
-          String phone = rs.getString("phone");
+          String phone = "";
           res.add(new Person(username, title, first, last, eMail, phone, -1, "N/A", "N/A"));
         } else
           res.add(found.get(0));// TODO set all of them!
@@ -1437,6 +1433,7 @@ public class DBManager {
     return res;
   }
 
+  @Deprecated
   public List<Affiliation> getAffiliationsContaining(String affiQuery) {
     List<Affiliation> res = new ArrayList<Affiliation>();
 
@@ -1600,28 +1597,7 @@ public class DBManager {
     } finally {
       endQuery(conn, statement);
     }
-    // now we need to add all projects without person connections
-    // sql =
-    // "SELECT t1.* FROM experiments t1 LEFT JOIN experiments_persons t2 ON t1.id = t2.experiment_id
-    // WHERE t2.experiment_id IS NULL";
-    // conn = login();
-    // statement = null;
-    // try {
-    // statement = conn.prepareStatement(sql);
-    // ResultSet rs = statement.executeQuery();
-    // while (rs.next()) {
-    // String[] openbisIDSplit = rs.getString("openbis_experiment_identifier").split("/");
-    // int id = rs.getInt("experiments.id");
-    // String exp = openbisIDSplit[3];
-    // String role = rs.getString("experiment_role");
-    // String name = rs.getString("first_name") + " " + rs.getString("family_name");
-    // res.add(new CollaboratorWithResponsibility(id, name, exp, role));
-    // }
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // } finally {
-    // endQuery(conn, statement);
-    // }
+
     return res;
   }
 
