@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.0 (2022-04-01)
+* Fix references to old tables
+
 ## 1.9.4 (2022-01-04)
 * Fix CVE-2021-44832
 * Increase log4j-version `2.17.0` -> `2.17.1`
