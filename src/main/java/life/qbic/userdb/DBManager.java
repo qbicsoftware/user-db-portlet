@@ -1151,7 +1151,7 @@ public class DBManager {
    */
   public int getAffiliationIDForPersonID(Integer personID) {
     String lnk = "person_affiliation";
-    String sql = "SELECT person.*, affiliation.* FROM persons, organizations, " + lnk
+    String sql = "SELECT person.*, affiliation.* FROM person, affiliation, " + lnk
         + " WHERE person.id = " + Integer.toString(personID) + " AND person.id = " + lnk
         + ".person_id and affiliation.id = " + lnk + ".affiliation_id";
     Connection conn = login();
