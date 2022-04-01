@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0  (2021-12-23)
+## 2.0.0 (2022-04-01)
 * Fix references to old tables
 
 ## 1.9.4 (2022-01-04)
