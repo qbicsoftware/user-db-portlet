@@ -28,8 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
-import life.qbic.datamodel.persons.Person;
-import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.openbis.openbisclient.IOpenBisClient;
 import life.qbic.openbis.openbisclient.OpenBisClient;
 import life.qbic.portal.Styles;
@@ -39,6 +37,8 @@ import life.qbic.portal.utils.ConfigurationManagerFactory;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.userdb.Config;
 import life.qbic.userdb.DBManager;
+import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.ProjectInfo;
 import life.qbic.userdb.views.AffiliationInput;
 import life.qbic.userdb.views.AffiliationVIPTab;
 import life.qbic.userdb.views.MultiAffiliationTab;
@@ -62,7 +62,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   private static final Logger logger = LogManager.getLogger(UserDBPortletUI.class);
   private DBManager dbControl;
   private Map<String, Integer> affiMap;
-  private Map<String, Integer> personMap;
+  private Map<String, Person> personMap;
   private Map<String, ProjectInfo> projectMap;
 
   private TabSheet options;
@@ -72,7 +72,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean development = false;
+  private final boolean development = true;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
@@ -151,47 +151,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
     } else {
       personMap = dbControl.getPersonMap();
 
-      /*
-       * Removed since 1.8.0 as most of the functionality moved to offer-manager-portlet 2
-       * 
-       * 
-       * affiMap = dbControl.getAffiliationMap();
-       * 
-       * Map<String, Integer> colNamesToMaxLength = fillMaxInputLengthMap();
-       * 
-       * Set<String> instituteNames = dbControl.getInstituteNames(); List<String> facultyEnums =
-       * dbControl.getPossibleEnumsForColumnsInTable("organizations", "faculty"); List<String>
-       * affiliationRoles = dbControl.getPossibleEnumsForColumnsInTable("persons_organizations",
-       * "occupation"); List<String> titleEnums =
-       * dbControl.getPossibleEnumsForColumnsInTable("persons", "title");
-       * 
-       * PersonInput addUserTab = new PersonInput(titleEnums, affiMap, affiliationRoles,
-       * colNamesToMaxLength, new AffiliationInput(instituteNames, facultyEnums, personMap,
-       * colNamesToMaxLength)); options.addTab(addUserTab, "New Person");
-       * 
-       * AffiliationInput addAffilTab = new AffiliationInput(instituteNames, facultyEnums,
-       * personMap, colNamesToMaxLength); options.addTab(addAffilTab, "New Affiliation");
-       * 
-       * SearchView searchView = new SearchView(); options.addTab(searchView, "Search Entries");
-       * 
-       * List<Affiliation> affiTable = dbControl.getAffiliationTable(); Map<Integer, Pair<String,
-       * String>> affiPeople = new HashMap<Integer, Pair<String, String>>(); for (Affiliation a :
-       * affiTable) { int id = a.getID(); affiPeople.put(id, new ImmutablePair<String,
-       * String>(a.getContactPerson(), a.getHeadName())); } PersonBatchUpload batchTab = new
-       * PersonBatchUpload(titleEnums, affiliationRoles, affiMap); options.addTab(batchTab,
-       * "Upload Person Table");
-       * 
-       * AffiliationVIPTab vipTab = new AffiliationVIPTab(personMap, affiMap, affiPeople);
-       * options.addTab(vipTab, "Edit Affiliation VIPs");
-       * 
-       * MultiAffiliationTab multiAffilTab = new MultiAffiliationTab(personMap, affiMap,
-       * affiliationRoles); options.addTab(multiAffilTab, "Additional Person-Affiliations");
-       * 
-       * if (!admin) { options.getTab(multiAffilTab).setEnabled(false);
-       * options.getTab(vipTab).setEnabled(false);
-       * 
-       * options.getTab(3).setEnabled(false); options.getTab(4).setEnabled(false); }
-       */
       String userID = "";
       if (PortalUtils.isLiferayPortlet()) {
         logger.info("DB Tools running on Liferay, fetching user ID.");
@@ -202,9 +161,9 @@ public class UserDBPortletUI extends QBiCPortletUI {
           userID = "admin";
         }
       }
-      Map<String, ProjectInfo> userProjects = new HashMap<String, ProjectInfo>();
+      Map<String, ProjectInfo> userProjects = new HashMap<>();
 
-      List<Project> openbisProjectsForUser = new ArrayList<Project>();
+      List<Project> openbisProjectsForUser = new ArrayList<>();
       Set<String> spaces = new HashSet<>(openbis.getUserSpaces(userID));
 
       List<Project> allOpenbisProjects = openbis.listProjects();
@@ -285,22 +244,14 @@ public class UserDBPortletUI extends QBiCPortletUI {
             }
             projectView.setCollaboratorsOfProject(collaborators);
 
-            Person investigator = getPersonOrNull(projectMap.get(item).getInvestigator());
-            Person manager = getPersonOrNull(projectMap.get(item).getManager());
-            Person contact = getPersonOrNull(projectMap.get(item).getContact());
+            ProjectInfo info = projectMap.get(item);
 
-            projectView.handleProjectValueChange(item, investigator, contact, manager);
+            projectView.handleProjectValueChange(item, info.getInvestigator(), info.getContact(), info.getManager());
           } else {
             projectView.handleProjectDeselect();
           }
         }
 
-        private Person getPersonOrNull(String name) {
-          if (personMap.get(name) != null) {
-            return dbControl.getPersonWithAffiliations(personMap.get(name)).get(0);
-          }
-          return null;
-        }
       });
 
       projectView.getInfoCommitButton().addClickListener(new ClickListener() {
@@ -316,18 +267,18 @@ public class UserDBPortletUI extends QBiCPortletUI {
                   info.getSecondaryName());
             else
               dbControl.addOrChangeSecondaryNameForProject(id, info.getSecondaryName());
-            if (info.getInvestigator() == null || info.getInvestigator().isEmpty())
+            if (info.getInvestigator() == null)
               dbControl.removePersonFromProject(id, "PI");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getInvestigator()), "PI");
-            if (info.getContact() == null || info.getContact().isEmpty())
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getInvestigator()).getId(), "PI");
+            if (info.getContact() == null)
               dbControl.removePersonFromProject(id, "Contact");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getContact()), "Contact");
-            if (info.getManager() == null || info.getManager().isEmpty())
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getContact()).getId(), "Contact");
+            if (info.getManager() == null)
               dbControl.removePersonFromProject(id, "Manager");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getManager()), "Manager");
+              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getManager()).getId(), "Manager");
             projectView.updateChangedInfo(info);
           }
         }
@@ -344,7 +295,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
             String name = c.getPerson();
             int personID = -1;
             if (personMap.get(name) != null)
-              personID = personMap.get(name);
+              personID = personMap.get(name).getId();
             if (personID < 1)
               dbControl.removePersonFromExperiment(experimentID);
             else
@@ -453,18 +404,18 @@ public class UserDBPortletUI extends QBiCPortletUI {
         if (affi != null && !affi.isEmpty()) {
           search.setAffiliations(dbControl.getAffiliationsContaining(affi));
         } else
-          search.setAffiliations(new ArrayList<Affiliation>());
+          search.setAffiliations(new ArrayList<>());
       }
     });
 
     search.getSearchPersonButton().addClickListener(new Button.ClickListener() {
       @Override
       public void buttonClick(ClickEvent event) {
-        String person = search.getPersonSearchField().getValue();
-        if (person != null && !person.isEmpty()) {
-          search.setPersons(dbControl.getPersonsContaining(person));
+        String personName = search.getPersonSearchField().getValue();
+        if (personName != null && !personName.isEmpty()) {
+          search.setPersons(dbControl.getPersonsContaining(personName));
         } else
-          search.setPersons(new ArrayList<Person>());
+          search.setPersons(new ArrayList<>());
       }
     });
 
@@ -550,7 +501,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       public void buttonClick(ClickEvent event) {
         if (multiAffilTab.isValid()) {
           if (dbControl.addOrUpdatePersonAffiliationConnections(
-              personMap.get(multiAffilTab.getPersonBox().getValue()),
+              personMap.get(multiAffilTab.getPersonBox().getValue()).getId(),
               multiAffilTab.getChangedAndNewConnections()))
             successfulCommit();
           else
@@ -565,12 +516,12 @@ public class UserDBPortletUI extends QBiCPortletUI {
       @Override
       public void buttonClick(ClickEvent event) {
         String personName = multiAffilTab.getPersonBox().getValue().toString();
-        Person p = dbControl.getPerson(personMap.get(personName));
+        Person p = personMap.get(personName);
 
         String affiName = multiAffilTab.getOrganizationBox().getValue().toString();
         Person newP = new Person(p.getUsername(), p.getTitle(), p.getFirstName(), p.getLastName(),
             p.getEmail(), p.getPhone(), affiMap.get(affiName), affiName, "");
-        multiAffilTab.addDataToTable(new ArrayList<Person>(Arrays.asList(newP)));
+        multiAffilTab.addDataToTable(new ArrayList<>(Arrays.asList(newP)));
         multiAffilTab.getAddButton().setEnabled(false);
       }
     });
@@ -582,7 +533,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
         if (multiAffilTab.getPersonBox().getValue() != null) {
           String personName = multiAffilTab.getPersonBox().getValue().toString();
           multiAffilTab.reactToPersonSelection(personName,
-              dbControl.getPersonWithAffiliations(personMap.get(personName)));
+              dbControl.getPersonWithAffiliations(personMap.get(personName).getId()));
           multiAffilTab.getAddButton().setEnabled(multiAffilTab.newAffiliationPossible());
         }
       }

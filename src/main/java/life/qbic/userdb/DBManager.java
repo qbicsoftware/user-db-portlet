@@ -33,11 +33,10 @@ import java.util.Map;
 import java.util.Set;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
-import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
-import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.userdb.model.Minutes;
+import life.qbic.userdb.model.Person;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -781,8 +780,8 @@ public class DBManager {
     return res;
   }
 
-  public Map<String, Integer> getPersonMap() {
-    Map<String, Integer> res = new HashMap<String, Integer>();
+  public Map<String, Person> getPersonMap() {
+    Map<String, Person> res = new HashMap<>();
     String sql = "SELECT * FROM person";
     Connection conn = login();
     PreparedStatement statement = null;
@@ -793,7 +792,10 @@ public class DBManager {
         int id = rs.getInt("id");
         String first = rs.getString("first_name");
         String last = rs.getString("last_name");
-        res.put(first + " " + last, id);
+        String userID = rs.getString("user_id");
+        String title = rs.getString("title");
+        String email = rs.getString("email");
+        res.put(first + " " + last, new Person(id, title, first, last, email, userID));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1486,11 +1488,11 @@ public class DBManager {
     return res;
   }
 
-  public Map<String, ProjectInfo> getProjectMap() {
-    Map<String, ProjectInfo> res = new HashMap<String, ProjectInfo>();
+  public Map<String, life.qbic.userdb.model.ProjectInfo> getProjectMap() {
+    Map<String, life.qbic.userdb.model.ProjectInfo> res = new HashMap<>();
     // since there are at the moment 2 different roles, this query will return two rows per project
     String sql =
-        "SELECT projects.*, projects.id, projects_persons.*, person.first_name, person.last_name FROM projects INNER JOIN projects_persons ON "
+        "SELECT projects.*, projects.id, projects_persons.*, person.* FROM projects INNER JOIN projects_persons ON "
             + "projects.id = projects_persons.project_id INNER JOIN person ON projects_persons.person_id = person.id";
     Connection conn = login();
     PreparedStatement statement = null;
@@ -1509,25 +1511,34 @@ public class DBManager {
           continue;
         }
         String role = rs.getString("project_role");
-        String name = rs.getString("first_name") + " " + rs.getString("last_name");
+
+        int personID = rs.getInt("person_id");
+        String first = rs.getString("first_name");
+        String last = rs.getString("last_name");
+        String userID = rs.getString("user_id");
+        String title = rs.getString("title");
+        String email = rs.getString("email");
+        Person person = new Person(personID, title, first, last, email, userID);
+
+
         if (!res.containsKey(projectID)) {
           // first result row
           String space = openbisIDSplit[1];
           int id = rs.getInt("project_id");
           String shortName = rs.getString("short_title");
-          res.put(projectID, new ProjectInfo(space, project, "", shortName, id));
+          res.put(projectID, new life.qbic.userdb.model.ProjectInfo(space, project, "", shortName, id));
         }
         // setting person for different role rows
-        ProjectInfo info = res.get(projectID);
+        life.qbic.userdb.model.ProjectInfo info = res.get(projectID);
         switch (role) {
           case "PI":
-            info.setInvestigator(name);
+            info.setInvestigator(person);
             break;
           case "Contact":
-            info.setContact(name);
+            info.setContact(person);
             break;
           case "Manager":
-            info.setManager(name);
+            info.setManager(person);
             break;
           default:
             logger.error("Unknown/unimplemented project role: " + role);
@@ -1555,7 +1566,7 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("id");
           String shortName = rs.getString("short_title");
-          res.put(projID, new ProjectInfo(space, project, "", shortName, id));
+          res.put(projID, new life.qbic.userdb.model.ProjectInfo(space, project, "", shortName, id));
         } catch (Exception e) {
           logger.error("Could not parse project from openbis identifier " + projID
               + ". It seems this database entry is incorrect. Ignoring project.");

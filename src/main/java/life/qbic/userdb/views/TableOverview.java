@@ -26,8 +26,8 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
 import life.qbic.datamodel.persons.Affiliation;
-import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.persons.RoleAt;
+import life.qbic.userdb.model.Person;
 
 public class TableOverview extends VerticalLayout {
 

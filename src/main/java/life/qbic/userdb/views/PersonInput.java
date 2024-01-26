@@ -33,9 +33,9 @@ import com.vaadin.ui.themes.ValoTheme;
 import java.util.List;
 import java.util.Map;
 import life.qbic.datamodel.persons.Affiliation;
-import life.qbic.datamodel.persons.Person;
 import life.qbic.portal.Styles;
 import life.qbic.userdb.helpers.RegExHelper;
+import life.qbic.userdb.model.Person;
 
 public class PersonInput extends HorizontalLayout {
 

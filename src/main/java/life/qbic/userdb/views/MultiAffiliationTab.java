@@ -27,9 +27,9 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.themes.ValoTheme;
-import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
+import life.qbic.userdb.model.Person;
 
 public class MultiAffiliationTab extends VerticalLayout {
 

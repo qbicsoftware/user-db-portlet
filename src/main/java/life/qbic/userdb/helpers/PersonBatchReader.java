@@ -14,10 +14,9 @@ import java.util.Set;
 
 import javax.xml.bind.JAXBException;
 
+import life.qbic.userdb.model.Person;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import life.qbic.datamodel.persons.Person;
 
 public class PersonBatchReader {
 
