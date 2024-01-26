@@ -795,7 +795,11 @@ public class DBManager {
         String userID = rs.getString("user_id");
         String title = rs.getString("title");
         String email = rs.getString("email");
-        res.put(first + " " + last, new Person(id, title, first, last, email, userID));
+        List<Affiliation> affiliations = new ArrayList<>();
+        for(int affId : getPersonAffiliationIDs(id)) {
+          affiliations.add(getAffiliationWithID(affId));
+        }
+        res.put(first + " " + last, new Person(id, title, first, last, email, userID, affiliations));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1227,7 +1231,7 @@ public class DBManager {
    * @return
    */
   public List<Person> getPersonWithAffiliations(Integer personID) {
-    List<Person> res = new ArrayList<Person>();
+    List<Person> res = new ArrayList<>();
     String lnk = "person_affiliation";
     String sql =
         "SELECT person.*, affiliation.id, affiliation.organization FROM person, affiliation, " + lnk
@@ -1518,8 +1522,11 @@ public class DBManager {
         String userID = rs.getString("user_id");
         String title = rs.getString("title");
         String email = rs.getString("email");
-        Person person = new Person(personID, title, first, last, email, userID);
-
+        List<Affiliation> affiliations = new ArrayList<>();
+        for(int affId : getPersonAffiliationIDs(personID)) {
+          affiliations.add(getAffiliationWithID(affId));
+        }
+        Person person = new Person(personID, title, first, last, email, userID, affiliations);
 
         if (!res.containsKey(projectID)) {
           // first result row

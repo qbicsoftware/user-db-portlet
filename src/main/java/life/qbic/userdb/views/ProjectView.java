@@ -283,7 +283,7 @@ public class ProjectView extends VerticalLayout {
   }
 
   private void addPersonInfos(List<String> data, Person p) {
-    if (p != null) {
+    if (p != null && !p.getAffiliations().isEmpty()) {
       data.add(getFullName(p));
       data.add(p.getEmail());
       Affiliation affi = p.getAffiliations().get(0);
@@ -503,9 +503,10 @@ public class ProjectView extends VerticalLayout {
       projectInfoLayout.setCaption(projectMap.get(item).getProjectCode());
       logger.info("Selected project: " + projectMap.get(item));
       altName.setValue(secondaryName);
-      investigatorBox.setValue(projectMap.get(item).getInvestigator());
-      contactBox.setValue(projectMap.get(item).getContact());
-      managerBox.setValue(projectMap.get(item).getManager());
+
+      investigatorBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getInvestigator())));
+      contactBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getContact())));
+      managerBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getManager())));
       try {
         armSingleProjectDownloadButton(item, PI, contact, manager);
         downloadProjectInfo.setVisible(true);
@@ -517,6 +518,11 @@ public class ProjectView extends VerticalLayout {
       }
       projectInfoLayout.setVisible(true);
     }
+  }
+
+  private String getStringOrNullElement(String input) {
+    if(input.isEmpty()) return null;
+    return input;
   }
 
 }

@@ -49,7 +49,7 @@ public class Person {
     affiliationInfo.put(affiliationID, new RoleAt(affiliationName, affRole));
   }
 
-  public Person(int id, String title, String first, String last, String email, String username) {
+  public Person(int id, String title, String first, String last, String email, String username, List<Affiliation> affiliations) {
     this.id = id;
     this.title = title;
     this.firstName = first;
@@ -57,6 +57,7 @@ public class Person {
     this.email = email;
     this.username = username;
     affiliationInfo = new HashMap<Integer, RoleAt>();
+    this.affiliations = affiliations;
   }
 
   public Person(String title, String first, String last, String email) {

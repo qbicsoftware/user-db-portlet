@@ -55,7 +55,6 @@ import org.apache.logging.log4j.Logger;
  * found in the {@code portal-utils-lib} library.
  */
 @Theme("mytheme")
-@SuppressWarnings("serial")
 @Widgetset("life.qbic.portlet.AppWidgetSet")
 public class UserDBPortletUI extends QBiCPortletUI {
 
@@ -67,12 +66,11 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
   private TabSheet options;
 
-  private ConfigurationManager manager;
   private Config config;
   public static String tmpFolder;
 
   private IOpenBisClient openbis;
-  private final boolean development = true;
+  private final boolean development = false;
 
   @Override
   protected Layout getPortletContent(final VaadinRequest request) {
@@ -84,7 +82,8 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
     String userID = "";
     boolean success = true;
-    manager = ConfigurationManagerFactory.getInstance();
+    System.err.println(QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH);
+    ConfigurationManager manager = ConfigurationManagerFactory.getInstance();
     tmpFolder = manager.getTmpFolder();
     if (PortalUtils.isLiferayPortlet()) {
       // read in the configuration file
@@ -202,7 +201,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       // searchView, projectView);
       projectView.getProjectTable().addValueChangeListener(new ValueChangeListener() {
 
-        private Map<String, String> expTypeCodeTranslation = new HashMap<String, String>() {
+        private final Map<String, String> expTypeCodeTranslation = new HashMap<String, String>() {
           {
             put("Q_EXPERIMENTAL_DESIGN", "Patients/Sources");
             put("Q_SAMPLE_EXTRACTION", "Sample Extracts");
@@ -221,7 +220,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
             List<CollaboratorWithResponsibility> collaborators =
                 dbControl.getCollaboratorsOfProject(project);
             // get openbis experiments and type
-            Map<String, String> existingExps = new HashMap<String, String>();
+            Map<String, String> existingExps = new HashMap<>();
             for (Experiment e : openbis.getExperimentsOfProjectByCode(project)) {
               String type = expTypeCodeTranslation.get(e.getType().getCode());
               String id = e.getIdentifier().getIdentifier();
@@ -270,15 +269,15 @@ public class UserDBPortletUI extends QBiCPortletUI {
             if (info.getInvestigator() == null)
               dbControl.removePersonFromProject(id, "PI");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getInvestigator()).getId(), "PI");
+              dbControl.addOrUpdatePersonToProject(id, info.getInvestigator().getId(), "PI");
             if (info.getContact() == null)
               dbControl.removePersonFromProject(id, "Contact");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getContact()).getId(), "Contact");
+              dbControl.addOrUpdatePersonToProject(id, info.getContact().getId(), "Contact");
             if (info.getManager() == null)
               dbControl.removePersonFromProject(id, "Manager");
             else
-              dbControl.addOrUpdatePersonToProject(id, personMap.get(info.getManager()).getId(), "Manager");
+              dbControl.addOrUpdatePersonToProject(id, info.getManager().getId(), "Manager");
             projectView.updateChangedInfo(info);
           }
         }
@@ -375,7 +374,7 @@ public class UserDBPortletUI extends QBiCPortletUI {
       @Override
       public void buttonClick(ClickEvent event) {
         if (batchUpload.isValid()) {
-          List<String> registered = new ArrayList<String>();
+          List<String> registered = new ArrayList<>();
           batchUpload.setRegEnabled(false);
           for (Person p : batchUpload.getPeople()) {
             if (dbControl.personExists(p)) {
@@ -572,14 +571,5 @@ public class UserDBPortletUI extends QBiCPortletUI {
   private void commitError(String reason) {
     Styles.notification("There has been an error.", reason, NotificationType.ERROR);
   }
-  //
-  // private String getPortletContextName(VaadinRequest request) {
-  // WrappedPortletSession wrappedPortletSession =
-  // (WrappedPortletSession) request.getWrappedSession();
-  // PortletSession portletSession = wrappedPortletSession.getPortletSession();
-  //
-  // final PortletContext context = portletSession.getPortletContext();
-  // final String portletContextName = context.getPortletContextName();
-  // return portletContextName;
-  // }
+
 }
