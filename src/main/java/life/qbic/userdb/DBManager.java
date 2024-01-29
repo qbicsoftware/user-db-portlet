@@ -37,6 +37,7 @@ import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
 import life.qbic.userdb.model.Minutes;
 import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.Person.PersonBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -710,7 +711,10 @@ public class DBManager {
         String last = rs.getString("family_name");
         String email = rs.getString("email");
         String phone = rs.getString("phone");
-        existing.add(new Person(username, title, first, last, email, phone, -1, "", ""));
+        PersonBuilder personBuilder = new PersonBuilder();
+        personBuilder.createPerson(title, first, last, email).withUsername(username).withPhoneNumber(phone)
+                .withRoleAtAffiliation(-1, "", "");
+        existing.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -799,7 +803,9 @@ public class DBManager {
         for(int affId : getPersonAffiliationIDs(id)) {
           affiliations.add(getAffiliationWithID(affId));
         }
-        res.put(first + " " + last, new Person(id, title, first, last, email, userID, affiliations));
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, email)
+                .withId(id).withAffiliations(affiliations).withUsername(userID);
+        res.put(first + " " + last, personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -969,8 +975,9 @@ public class DBManager {
         String affiliation =
             rs.getString("group_name") + " (" + rs.getString("group_acronym") + ")";
         String role = rs.getString(lnk + ".occupation");
-        res.add(new Person(username, title, first, last, eMail, phone, affiliationID, affiliation,
-            role)); // TODO add every affiliation!
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withId(id).withUsername(username).withPhoneNumber(phone).withRoleAtAffiliation(affiliationID, affiliation, role);
+        res.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1254,8 +1261,10 @@ public class DBManager {
         int affiliationID = rs.getInt("affiliation.id");
         String affiliation = rs.getString("organization");
         // set phone number empty due to new table
-        res.add(new Person(username, title, first, last, eMail, "", affiliationID, affiliation,
-            "Member", affiliations));
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withRoleAtAffiliation(affiliationID, affiliation, "Member").withAffiliations(affiliations)
+            .withUsername(username).withPhoneNumber("");
+        res.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1317,7 +1326,9 @@ public class DBManager {
         String first = rs.getString("first_name");
         String last = rs.getString("last_name");
         String eMail = rs.getString("email");
-        res = new Person(username, title, first, last, eMail, "", -1, null, null);
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withId(id).withRoleAtAffiliation(-1, null, null).withPhoneNumber("");
+        res = personBuilder.getPerson();
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1388,7 +1399,9 @@ public class DBManager {
           String first = rs.getString("first_name");
           String last = rs.getString("last_name");
           String eMail = rs.getString("email");
-          res.add(new Person(username, title, first, last, eMail, "", -1, "N/A", "N/A"));
+          PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+              .withId(id).withPhoneNumber("").withUsername(username).withRoleAtAffiliation(-1, "N/A", "N/A");
+          res.add(personBuilder.getPerson());
         } else
           res.add(found.get(0));// TODO set all of them!
       }
@@ -1427,7 +1440,9 @@ public class DBManager {
           String last = rs.getString("last_name");
           String eMail = rs.getString("email");
           String phone = "";
-          res.add(new Person(username, title, first, last, eMail, phone, -1, "N/A", "N/A"));
+          PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+              .withId(id).withPhoneNumber(phone).withUsername(username).withRoleAtAffiliation(-1, "N/A", "N/A");
+          res.add(personBuilder.getPerson());
         } else
           res.add(found.get(0));// TODO set all of them!
       }
@@ -1526,7 +1541,9 @@ public class DBManager {
         for(int affId : getPersonAffiliationIDs(personID)) {
           affiliations.add(getAffiliationWithID(affId));
         }
-        Person person = new Person(personID, title, first, last, email, userID, affiliations);
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, email)
+            .withId(personID).withAffiliations(affiliations).withUsername(userID);
+        Person person = personBuilder.getPerson();
 
         if (!res.containsKey(projectID)) {
           // first result row

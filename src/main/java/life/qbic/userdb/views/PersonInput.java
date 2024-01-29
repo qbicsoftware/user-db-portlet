@@ -36,6 +36,7 @@ import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.portal.Styles;
 import life.qbic.userdb.helpers.RegExHelper;
 import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.Person.PersonBuilder;
 
 public class PersonInput extends HorizontalLayout {
 
@@ -176,8 +177,11 @@ public class PersonInput extends HorizontalLayout {
     int affiID = -1;
     if (affiliationMap.containsKey(affi))
       affiID = affiliationMap.get(affi);
-    return new Person(userName.getValue(), ttl, first.getValue(), last.getValue(), eMail.getValue(),
-        phone.getValue(), affiID, affi, affRole);
+    PersonBuilder builder = new PersonBuilder().createPerson(ttl, first.getValue(), last.getValue(), eMail.getValue())
+        .withUsername(userName.getValue())
+        .withPhoneNumber(phone.getValue())
+        .withRoleAtAffiliation(affiID, affi, affRole);
+    return builder.getPerson();
   }
 
   public boolean hasNewAffiliation() {

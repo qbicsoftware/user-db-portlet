@@ -38,6 +38,7 @@ import life.qbic.portal.utils.PortalUtils;
 import life.qbic.userdb.Config;
 import life.qbic.userdb.DBManager;
 import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.Person.PersonBuilder;
 import life.qbic.userdb.model.ProjectInfo;
 import life.qbic.userdb.views.AffiliationInput;
 import life.qbic.userdb.views.AffiliationVIPTab;
@@ -517,9 +518,13 @@ public class UserDBPortletUI extends QBiCPortletUI {
         Person p = personMap.get(personName);
 
         String affiName = multiAffilTab.getOrganizationBox().getValue().toString();
-        Person newP = new Person(p.getUsername(), p.getTitle(), p.getFirstName(), p.getLastName(),
-            p.getEmail(), p.getPhone(), affiMap.get(affiName), affiName, "");
-        multiAffilTab.addDataToTable(new ArrayList<>(Arrays.asList(newP)));
+        PersonBuilder personBuilder = new PersonBuilder();
+        personBuilder.createPerson(p.getTitle(), p.getFirstName(), p.getLastName(),
+            p.getEmail())
+            .withUsername(p.getUsername())
+            .withPhoneNumber(p.getPhone())
+            .withRoleAtAffiliation(affiMap.get(affiName), affiName, "");
+        multiAffilTab.addDataToTable(new ArrayList<>(Arrays.asList(personBuilder.getPerson())));
         multiAffilTab.getAddButton().setEnabled(false);
       }
     });

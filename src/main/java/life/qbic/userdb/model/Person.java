@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.RoleAt;
@@ -13,70 +14,19 @@ public class Person {
   private String firstName;
   private String lastName;
   private String email;
-  private int instituteID;
   private String username;
   private String title;
   private String phone;
   private Map<Integer, RoleAt> affiliationInfo; // ids and roles
   private List<Affiliation> affiliations;
 
-  public Person(String username, String title, String first, String last, String eMail,
-      String phone, int affiliationID, String affiliationName, String affRole,
-      List<Affiliation> affiliations) {
-    super();
-    this.username = username;
-    this.title = title;
-    this.firstName = first;
-    this.lastName = last;
-    this.email = eMail;
-    this.phone = phone;
-    this.affiliations = affiliations;
-    affiliationInfo = new HashMap<Integer, RoleAt>();
-    affiliationInfo.put(affiliationID, new RoleAt(affiliationName, affRole));
-  }
-
-  public Person(String username, String title, String first, String last, String eMail,
-      String phone, int affiliationID, String affiliationName, String affRole) {
-    super();
-    this.username = username;
-    this.title = title;
-    this.firstName = first;
-    this.lastName = last;
-    this.email = eMail;
-    this.phone = phone;
-    this.affiliations = new ArrayList<Affiliation>();
-    affiliationInfo = new HashMap<Integer, RoleAt>();
-    affiliationInfo.put(affiliationID, new RoleAt(affiliationName, affRole));
-  }
-
-  public Person(int id, String title, String first, String last, String email, String username, List<Affiliation> affiliations) {
-    this.id = id;
+  protected Person(String title, String first, String last, String email) {
     this.title = title;
     this.firstName = first;
     this.lastName = last;
     this.email = email;
-    this.username = username;
-    affiliationInfo = new HashMap<Integer, RoleAt>();
-    this.affiliations = affiliations;
-  }
-
-  public Person(String title, String first, String last, String email) {
-    this.title = title;
-    this.firstName = first;
-    this.lastName = last;
-    this.email = email;
-    affiliationInfo = new HashMap<Integer, RoleAt>();
-  }
-
-  public Person(String zdvID, String firstName, String lastName, String email, String telephone,
-      int instituteID) {
-    super();
-    this.username = zdvID;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.email = email;
-    this.phone = telephone;
-    this.instituteID = instituteID;
+    affiliationInfo = new HashMap<>();
+    affiliations = new ArrayList<>();
   }
 
   public String getUsername() {
@@ -103,10 +53,6 @@ public class Person {
     return phone;
   }
 
-  public int getInstituteID() {
-    return instituteID;
-  }
-
   public Map<Integer, RoleAt> getAffiliationInfos() {
     return affiliationInfo;
   }
@@ -114,56 +60,57 @@ public class Person {
   public void addAffiliationInfo(int id, String name, String role) {
     affiliationInfo.put(id, new RoleAt(name, role));
   }
-  //
-  // public int getID() {
-  // return id;
-  // }
 
   @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
+  public boolean equals(Object o) {
+    if (this == o) {
       return true;
-    if (obj == null)
+    }
+    if (!(o instanceof Person)) {
       return false;
-    if (getClass() != obj.getClass())
+    }
+
+    Person person = (Person) o;
+
+    if (id != person.id) {
       return false;
-    Person other = (Person) obj;
-    if (affiliationInfo == null) {
-      if (other.affiliationInfo != null)
-        return false;
-    } else if (!affiliationInfo.equals(other.affiliationInfo))
+    }
+    if (!firstName.equals(person.firstName)) {
       return false;
-    if (email == null) {
-      if (other.email != null)
-        return false;
-    } else if (!email.equals(other.email))
+    }
+    if (!lastName.equals(person.lastName)) {
       return false;
-    if (firstName == null) {
-      if (other.firstName != null)
-        return false;
-    } else if (!firstName.equals(other.firstName))
+    }
+    if (!email.equals(person.email)) {
       return false;
-    if (lastName == null) {
-      if (other.lastName != null)
-        return false;
-    } else if (!lastName.equals(other.lastName))
+    }
+    if (!Objects.equals(username, person.username)) {
       return false;
-    if (phone == null) {
-      if (other.phone != null)
-        return false;
-    } else if (!phone.equals(other.phone))
+    }
+    if (!Objects.equals(title, person.title)) {
       return false;
-    if (title == null) {
-      if (other.title != null)
-        return false;
-    } else if (!title.equals(other.title))
+    }
+    if (!Objects.equals(phone, person.phone)) {
       return false;
-    if (username == null) {
-      if (other.username != null)
-        return false;
-    } else if (!username.equals(other.username))
+    }
+    if (!Objects.equals(affiliationInfo, person.affiliationInfo)) {
       return false;
-    return true;
+    }
+    return Objects.equals(affiliations, person.affiliations);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = id;
+    result = 31 * result + firstName.hashCode();
+    result = 31 * result + lastName.hashCode();
+    result = 31 * result + email.hashCode();
+    result = 31 * result + (username != null ? username.hashCode() : 0);
+    result = 31 * result + (title != null ? title.hashCode() : 0);
+    result = 31 * result + (phone != null ? phone.hashCode() : 0);
+    result = 31 * result + (affiliationInfo != null ? affiliationInfo.hashCode() : 0);
+    result = 31 * result + (affiliations != null ? affiliations.hashCode() : 0);
+    return result;
   }
 
   public void setAffiliationID(int affiID) {
@@ -176,22 +123,26 @@ public class Person {
     return affiliations;
   }
 
+  protected void setAffiliations(List<Affiliation> affiliations) {
+    this.affiliations = affiliations;
+  }
+
   public int getId() { return id; }
-  public void setPhone(String phone) {
+
+  protected void setId(int id) {
+    this.id = id;
+  }
+  protected void setPhone(String phone) {
     this.phone = phone;
   }
 
-  public void setUsername(String username) {
+  protected void setUsername(String username) {
     this.username = username;
   }
 
   @Override
   public String toString() {
     return firstName + " " + lastName + " (" + email + ")";
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
   }
 
   /**
@@ -204,6 +155,49 @@ public class Person {
     List<Integer> keys = new ArrayList<Integer>(affiliationInfo.keySet());
     Integer randomKey = keys.get(random.nextInt(keys.size()));
     return affiliationInfo.get(randomKey);
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public static class PersonBuilder {
+
+    private Person person;
+
+    public Person getPerson() {
+      return person;
+    }
+
+    public PersonBuilder createPerson(String title, String first, String last, String email) {
+      person = new Person(title, first, last, email);
+      return this;
+    }
+
+    public PersonBuilder withId(int id) {
+      person.setId(id);
+      return this;
+    }
+
+    public PersonBuilder withPhoneNumber(String phoneNumber) {
+      person.setPhone(phoneNumber);
+      return this;
+    }
+
+    public PersonBuilder withUsername(String username) {
+      person.setUsername(username);
+      return this;
+    }
+
+    public PersonBuilder withAffiliations(List<Affiliation> affiliations) {
+      person.setAffiliations(affiliations);
+      return this;
+    }
+
+    public PersonBuilder withRoleAtAffiliation(int affiliationId, String affiliationName, String role) {
+      person.addAffiliationInfo(affiliationId, affiliationName, role);
+      return this;
+    }
   }
 
 }

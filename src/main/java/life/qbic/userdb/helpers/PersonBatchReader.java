@@ -15,6 +15,7 @@ import java.util.Set;
 import javax.xml.bind.JAXBException;
 
 import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.Person.PersonBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -142,12 +143,13 @@ public class PersonBatchReader {
       String last = row[headerMapping.get("last name")];
       String title = row[headerMapping.get("title")];
       String mail = row[headerMapping.get("email")];
-      Person p = new Person(title, first, last, mail);
+      PersonBuilder personBuilder = new PersonBuilder();
+      personBuilder.createPerson(title, first, last, mail);
       if (headerMapping.get("phone") != null)
-        p.setPhone(row[headerMapping.get("phone")]);
+        personBuilder.withPhoneNumber(row[headerMapping.get("phone")]);
       if (headerMapping.get("username") != null)
-        p.setUsername(row[headerMapping.get("username")]);
-      people.add(p);
+        personBuilder.withUsername(row[headerMapping.get("username")]);
+      people.add(personBuilder.getPerson());
     }
     return true;
   }
