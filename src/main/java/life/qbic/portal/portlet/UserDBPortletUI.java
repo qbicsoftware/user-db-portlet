@@ -82,7 +82,6 @@ public class UserDBPortletUI extends QBiCPortletUI {
 
     String userID = "";
     boolean success = true;
-    System.err.println(QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH);
     ConfigurationManager manager = ConfigurationManagerFactory.getInstance();
     tmpFolder = manager.getTmpFolder();
     if (PortalUtils.isLiferayPortlet()) {
