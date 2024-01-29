@@ -39,11 +39,12 @@ import java.util.Map;
 import java.util.Objects;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
-import life.qbic.datamodel.persons.Person;
-import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.portal.Styles;
 import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
+import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.ProjectInfo;
+import life.qbic.userdb.model.ProjectInfo.ProjectInfoBuilder;
 import life.qbic.utils.TimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +60,7 @@ public class ProjectView extends VerticalLayout {
   private FileDownloader tableDL;
 
   private Map<String, ProjectInfo> projectMap;
-  private Map<String, Integer> personMap;
+  private Map<String, Person> personMap;
 
   private CheckBox showIncomplete;
 
@@ -78,7 +79,7 @@ public class ProjectView extends VerticalLayout {
 
   private VerticalLayout projectInfoLayout;
 
-  public ProjectView(Map<String, ProjectInfo> projectMap, Map<String, Integer> personMap) {
+  public ProjectView(Map<String, ProjectInfo> projectMap, Map<String, Person> personMap) {
     setSpacing(true);
     setMargin(true);
 
@@ -161,7 +162,7 @@ public class ProjectView extends VerticalLayout {
     projectInfoLayout.setSpacing(true);
     addComponent(projectInfoLayout);
   }
-  
+
   public void initProjectTable(boolean showIncompleteOnly) {
     projectTable.removeAllItems();
     for (String code : projectMap.keySet()) {
@@ -169,9 +170,9 @@ public class ProjectView extends VerticalLayout {
       List<Object> row = new ArrayList<Object>();
 
       String secName = p.getSecondaryName();
-      String inv = p.getInvestigator();
-      String mang = p.getManager();
-      String cont = p.getContact();
+      String inv = getFullName(p.getInvestigator());
+      String mang = getFullName(p.getManager());
+      String cont = getFullName(p.getContact());
 
       row.add(code);
       row.add(secName);
@@ -205,16 +206,10 @@ public class ProjectView extends VerticalLayout {
   /**
    * Creates a tab separated values file of the available project information
    * 
-   * @param manager
-   * @param contact
+   * @param subProject
    * @param PI
-   * 
-   * @param managerName
-   * @param contactName
-   * @param invName
-   * @param space
-   * @param secondaryName
-   * @param string
+   * @param contact
+   * @param manager
    * 
    * @return
    * @throws FileNotFoundException
@@ -273,14 +268,9 @@ public class ProjectView extends VerticalLayout {
       String name = proj.getSecondaryName();
       name = name == null ? "" : name;
       String space = proj.getSpace();
-      String inv = proj.getInvestigator();
-      inv = inv == null ? "" : inv;
-      String cont = proj.getContact();
-      cont = cont == null ? "" : cont;
-      String mang = proj.getManager();
-      mang = mang == null ? "" : mang;
       String row = replaceSpecialSymbols(
-          String.join("\t", Arrays.asList(code, name, space, inv, cont, mang)));
+          String.join("\t", Arrays.asList(code, name, space, getFullName(proj.getInvestigator()),
+              getFullName(proj.getContact()), getFullName(proj.getManager()))));
       builder.append(row + "\n");
     }
     return builder.toString();
@@ -294,7 +284,7 @@ public class ProjectView extends VerticalLayout {
   }
 
   private void addPersonInfos(List<String> data, Person p) {
-    if (p != null) {
+    if (p != null && !p.getAffiliations().isEmpty()) {
       data.add(getFullName(p));
       data.add(p.getEmail());
       Affiliation affi = p.getAffiliations().get(0);
@@ -313,6 +303,7 @@ public class ProjectView extends VerticalLayout {
   }
 
   private String getFullName(Person person) {
+    if(person==null) return "";
     return person.getFirstName() + " " + person.getLastName();
   }
 
@@ -378,41 +369,35 @@ public class ProjectView extends VerticalLayout {
     String oldName = p.getSecondaryName();
     String newName = altName.getValue();
 
-    String oldPI = p.getInvestigator();
-    Object newPI = investigatorBox.getValue();
-    boolean updatePI = oldPI != newPI;
-    if (oldPI != null)
-      updatePI = !oldPI.equals(newPI);
+    String oldPIName = getFullName(p.getInvestigator());
+    Object newPIName = investigatorBox.getValue();
+    boolean updatePI = !oldPIName.equals(newPIName);
 
-    String oldContact = p.getContact();
-    Object newContact = contactBox.getValue();
-    boolean updateContact = oldContact != newContact;
-    if (oldContact != null)
-      updateContact = !oldContact.equals(newContact);
+    String oldContactName = getFullName(p.getContact());
+    Object newContactName = contactBox.getValue();
+    boolean updateContact = !oldContactName.equals(newContactName);
 
-    String oldManager = p.getManager();
-    Object newManager = managerBox.getValue();
-    boolean updateManager = oldManager != newManager;
-    if (oldManager != null)
-      updateManager = !oldManager.equals(newManager);
+    String oldManagerName = getFullName(p.getManager());
+    Object newManagerName = managerBox.getValue();
+    boolean updateManager = !oldManagerName.equals(newManagerName);
 
     boolean update = !oldName.equals(newName) || updatePI || updateContact || updateManager;
     if (update) {
       // initProjectInfos(projectMap.values());
-      ProjectInfo newInfo =
-          new ProjectInfo(p.getSpace(), code, p.getDescription(), newName, p.getProjectID());
-      if (newPI != null)
-        newInfo.setInvestigator(newPI.toString());
+      ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(p.getSpace(), code, p.getDescription(), newName).withId(p.getProjectID());
+      ProjectInfo newInfo = infoBuilder.getProjectInfo();
+      if (newPIName != null)
+        newInfo.setInvestigator(personMap.get(newPIName.toString()));
       else
-        newInfo.setInvestigator("");
-      if (newContact != null)
-        newInfo.setContact(newContact.toString());
+        newInfo.setInvestigator(null);
+      if (newContactName != null)
+        newInfo.setContact(personMap.get(newContactName.toString()));
       else
-        newInfo.setContact("");
-      if (newManager != null)
-        newInfo.setManager(newManager.toString());
+        newInfo.setContact(null);
+      if (newManagerName != null)
+        newInfo.setManager(personMap.get(newManagerName.toString()));
       else
-        newInfo.setManager("");
+        newInfo.setManager(null);
       return newInfo;
     } else {
       logger.debug("No changes to project info detected");
@@ -519,9 +504,10 @@ public class ProjectView extends VerticalLayout {
       projectInfoLayout.setCaption(projectMap.get(item).getProjectCode());
       logger.info("Selected project: " + projectMap.get(item));
       altName.setValue(secondaryName);
-      investigatorBox.setValue(projectMap.get(item).getInvestigator());
-      contactBox.setValue(projectMap.get(item).getContact());
-      managerBox.setValue(projectMap.get(item).getManager());
+
+      investigatorBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getInvestigator())));
+      contactBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getContact())));
+      managerBox.setValue(getStringOrNullElement(getFullName(projectMap.get(item).getManager())));
       try {
         armSingleProjectDownloadButton(item, PI, contact, manager);
         downloadProjectInfo.setVisible(true);
@@ -533,6 +519,11 @@ public class ProjectView extends VerticalLayout {
       }
       projectInfoLayout.setVisible(true);
     }
+  }
+
+  private String getStringOrNullElement(String input) {
+    if(input.isEmpty()) return null;
+    return input;
   }
 
 }

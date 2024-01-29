@@ -33,11 +33,12 @@ import java.util.Map;
 import java.util.Set;
 import life.qbic.datamodel.persons.Affiliation;
 import life.qbic.datamodel.persons.CollaboratorWithResponsibility;
-import life.qbic.datamodel.persons.Person;
 import life.qbic.datamodel.persons.PersonAffiliationConnectionInfo;
 import life.qbic.datamodel.persons.RoleAt;
-import life.qbic.datamodel.projects.ProjectInfo;
 import life.qbic.userdb.model.Minutes;
+import life.qbic.userdb.model.Person;
+import life.qbic.userdb.model.Person.PersonBuilder;
+import life.qbic.userdb.model.ProjectInfo.ProjectInfoBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -711,7 +712,10 @@ public class DBManager {
         String last = rs.getString("family_name");
         String email = rs.getString("email");
         String phone = rs.getString("phone");
-        existing.add(new Person(username, title, first, last, email, phone, -1, "", ""));
+        PersonBuilder personBuilder = new PersonBuilder();
+        personBuilder.createPerson(title, first, last, email).withUsername(username).withPhoneNumber(phone)
+                .withRoleAtAffiliation(-1, "", "");
+        existing.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -781,8 +785,8 @@ public class DBManager {
     return res;
   }
 
-  public Map<String, Integer> getPersonMap() {
-    Map<String, Integer> res = new HashMap<String, Integer>();
+  public Map<String, Person> getPersonMap() {
+    Map<String, Person> res = new HashMap<>();
     String sql = "SELECT * FROM person";
     Connection conn = login();
     PreparedStatement statement = null;
@@ -793,7 +797,16 @@ public class DBManager {
         int id = rs.getInt("id");
         String first = rs.getString("first_name");
         String last = rs.getString("last_name");
-        res.put(first + " " + last, id);
+        String userID = rs.getString("user_id");
+        String title = rs.getString("title");
+        String email = rs.getString("email");
+        List<Affiliation> affiliations = new ArrayList<>();
+        for(int affId : getPersonAffiliationIDs(id)) {
+          affiliations.add(getAffiliationWithID(affId));
+        }
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, email)
+                .withId(id).withAffiliations(affiliations).withUsername(userID);
+        res.put(first + " " + last, personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -963,8 +976,9 @@ public class DBManager {
         String affiliation =
             rs.getString("group_name") + " (" + rs.getString("group_acronym") + ")";
         String role = rs.getString(lnk + ".occupation");
-        res.add(new Person(username, title, first, last, eMail, phone, affiliationID, affiliation,
-            role)); // TODO add every affiliation!
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withId(id).withUsername(username).withPhoneNumber(phone).withRoleAtAffiliation(affiliationID, affiliation, role);
+        res.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1225,7 +1239,7 @@ public class DBManager {
    * @return
    */
   public List<Person> getPersonWithAffiliations(Integer personID) {
-    List<Person> res = new ArrayList<Person>();
+    List<Person> res = new ArrayList<>();
     String lnk = "person_affiliation";
     String sql =
         "SELECT person.*, affiliation.id, affiliation.organization FROM person, affiliation, " + lnk
@@ -1248,8 +1262,10 @@ public class DBManager {
         int affiliationID = rs.getInt("affiliation.id");
         String affiliation = rs.getString("organization");
         // set phone number empty due to new table
-        res.add(new Person(username, title, first, last, eMail, "", affiliationID, affiliation,
-            "Member", affiliations));
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withRoleAtAffiliation(affiliationID, affiliation, "Member").withAffiliations(affiliations)
+            .withUsername(username).withPhoneNumber("");
+        res.add(personBuilder.getPerson());
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1311,7 +1327,9 @@ public class DBManager {
         String first = rs.getString("first_name");
         String last = rs.getString("last_name");
         String eMail = rs.getString("email");
-        res = new Person(username, title, first, last, eMail, "", -1, null, null);
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+            .withId(id).withRoleAtAffiliation(-1, null, null).withPhoneNumber("");
+        res = personBuilder.getPerson();
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -1382,7 +1400,9 @@ public class DBManager {
           String first = rs.getString("first_name");
           String last = rs.getString("last_name");
           String eMail = rs.getString("email");
-          res.add(new Person(username, title, first, last, eMail, "", -1, "N/A", "N/A"));
+          PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+              .withId(id).withPhoneNumber("").withUsername(username).withRoleAtAffiliation(-1, "N/A", "N/A");
+          res.add(personBuilder.getPerson());
         } else
           res.add(found.get(0));// TODO set all of them!
       }
@@ -1421,7 +1441,9 @@ public class DBManager {
           String last = rs.getString("last_name");
           String eMail = rs.getString("email");
           String phone = "";
-          res.add(new Person(username, title, first, last, eMail, phone, -1, "N/A", "N/A"));
+          PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, eMail)
+              .withId(id).withPhoneNumber(phone).withUsername(username).withRoleAtAffiliation(-1, "N/A", "N/A");
+          res.add(personBuilder.getPerson());
         } else
           res.add(found.get(0));// TODO set all of them!
       }
@@ -1486,11 +1508,11 @@ public class DBManager {
     return res;
   }
 
-  public Map<String, ProjectInfo> getProjectMap() {
-    Map<String, ProjectInfo> res = new HashMap<String, ProjectInfo>();
+  public Map<String, life.qbic.userdb.model.ProjectInfo> getProjectMap() {
+    Map<String, life.qbic.userdb.model.ProjectInfo> res = new HashMap<>();
     // since there are at the moment 2 different roles, this query will return two rows per project
     String sql =
-        "SELECT projects.*, projects.id, projects_persons.*, person.first_name, person.last_name FROM projects INNER JOIN projects_persons ON "
+        "SELECT projects.*, projects.id, projects_persons.*, person.* FROM projects INNER JOIN projects_persons ON "
             + "projects.id = projects_persons.project_id INNER JOIN person ON projects_persons.person_id = person.id";
     Connection conn = login();
     PreparedStatement statement = null;
@@ -1509,25 +1531,40 @@ public class DBManager {
           continue;
         }
         String role = rs.getString("project_role");
-        String name = rs.getString("first_name") + " " + rs.getString("last_name");
+
+        int personID = rs.getInt("person_id");
+        String first = rs.getString("first_name");
+        String last = rs.getString("last_name");
+        String userID = rs.getString("user_id");
+        String title = rs.getString("title");
+        String email = rs.getString("email");
+        List<Affiliation> affiliations = new ArrayList<>();
+        for(int affId : getPersonAffiliationIDs(personID)) {
+          affiliations.add(getAffiliationWithID(affId));
+        }
+        PersonBuilder personBuilder = new PersonBuilder().createPerson(title, first, last, email)
+            .withId(personID).withAffiliations(affiliations).withUsername(userID);
+        Person person = personBuilder.getPerson();
+
         if (!res.containsKey(projectID)) {
           // first result row
           String space = openbisIDSplit[1];
           int id = rs.getInt("project_id");
           String shortName = rs.getString("short_title");
-          res.put(projectID, new ProjectInfo(space, project, "", shortName, id));
+          ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(space, project, "", shortName).withId(id);
+          res.put(projectID, infoBuilder.getProjectInfo());
         }
         // setting person for different role rows
-        ProjectInfo info = res.get(projectID);
+        life.qbic.userdb.model.ProjectInfo info = res.get(projectID);
         switch (role) {
           case "PI":
-            info.setInvestigator(name);
+            info.setInvestigator(person);
             break;
           case "Contact":
-            info.setContact(name);
+            info.setContact(person);
             break;
           case "Manager":
-            info.setManager(name);
+            info.setManager(person);
             break;
           default:
             logger.error("Unknown/unimplemented project role: " + role);
@@ -1555,7 +1592,8 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("id");
           String shortName = rs.getString("short_title");
-          res.put(projID, new ProjectInfo(space, project, "", shortName, id));
+          ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(space, project, "", shortName).withId(id);
+          res.put(projID, infoBuilder.getProjectInfo());
         } catch (Exception e) {
           logger.error("Could not parse project from openbis identifier " + projID
               + ". It seems this database entry is incorrect. Ignoring project.");
