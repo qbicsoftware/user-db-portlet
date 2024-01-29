@@ -1,5 +1,6 @@
 package life.qbic.userdb.model;
 
+import java.util.Objects;
 import life.qbic.userdb.model.Person.PersonBuilder;
 
 public class ProjectInfo {
@@ -68,6 +69,54 @@ public class ProjectInfo {
     res += "Ctct: " + contact + ", ";
     res += "Mngr: " + manager;
     return res;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ProjectInfo)) {
+      return false;
+    }
+
+    ProjectInfo that = (ProjectInfo) o;
+
+    if (projectID != that.projectID) {
+      return false;
+    }
+    if (!Objects.equals(description, that.description)) {
+      return false;
+    }
+    if (!Objects.equals(secondaryName, that.secondaryName)) {
+      return false;
+    }
+    if (!Objects.equals(investigator, that.investigator)) {
+      return false;
+    }
+    if (!Objects.equals(contact, that.contact)) {
+      return false;
+    }
+    if (!Objects.equals(manager, that.manager)) {
+      return false;
+    }
+    if (!Objects.equals(space, that.space)) {
+      return false;
+    }
+    return Objects.equals(projectCode, that.projectCode);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = description != null ? description.hashCode() : 0;
+    result = 31 * result + (secondaryName != null ? secondaryName.hashCode() : 0);
+    result = 31 * result + (investigator != null ? investigator.hashCode() : 0);
+    result = 31 * result + (contact != null ? contact.hashCode() : 0);
+    result = 31 * result + (manager != null ? manager.hashCode() : 0);
+    result = 31 * result + (space != null ? space.hashCode() : 0);
+    result = 31 * result + (projectCode != null ? projectCode.hashCode() : 0);
+    result = 31 * result + projectID;
+    return result;
   }
 
   public String getProjectCode() {
