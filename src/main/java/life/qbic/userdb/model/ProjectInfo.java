@@ -1,5 +1,7 @@
 package life.qbic.userdb.model;
 
+import life.qbic.userdb.model.Person.PersonBuilder;
+
 public class ProjectInfo {
 
   private String description;
@@ -7,34 +9,15 @@ public class ProjectInfo {
   private Person investigator;
   private Person contact;
   private Person manager;
-  private boolean isPilot;
   private String space;
   private String projectCode;
   private int projectID;
 
-  public ProjectInfo(String space, String code, String description, String secondaryName,
-      boolean isPilot, Person investigator, Person contact, Person manager) {
+  protected ProjectInfo(String space, String code, String description, String secondaryName) {
     this.space = space;
     this.projectCode = code;
     this.description = description;
     this.secondaryName = secondaryName;
-    this.isPilot = isPilot;
-    this.investigator = investigator;
-    this.contact = contact;
-    this.manager = manager;
-  }
-
-  public ProjectInfo(String space, String code, String description, String secondaryName, int id) {
-    this.space = space;
-    this.projectCode = code;
-    this.description = description;
-    this.secondaryName = secondaryName;
-    this.projectID = id;
-    this.isPilot = false;
-  }
-
-  public boolean isPilot() {
-    return isPilot;
   }
 
   public String getDescription() {
@@ -98,5 +81,36 @@ public class ProjectInfo {
   public int getProjectID() {
     return projectID;
   }
+
+  public static class ProjectInfoBuilder {
+
+    private ProjectInfo info;
+
+    public ProjectInfo getProjectInfo() {
+      return info;
+    }
+
+    public ProjectInfoBuilder createProjectInfo(String space, String code, String description, String secondaryName) {
+      info = new ProjectInfo(space, code, description, secondaryName);
+      return this;
+    }
+
+    public ProjectInfoBuilder withPersons(Person investigator, Person contact, Person manager) {
+      info.setInvestigator(investigator);
+      info.setContact(contact);
+      info.setManager(manager);
+      return this;
+    }
+
+    public ProjectInfoBuilder withId(int id) {
+      info.setId(id);
+      return this;
+    }
 }
+
+  private void setId(int id) {
+    this.projectID = id;
+  }
+
+  }
 

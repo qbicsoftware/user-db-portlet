@@ -38,6 +38,7 @@ import life.qbic.datamodel.persons.RoleAt;
 import life.qbic.userdb.model.Minutes;
 import life.qbic.userdb.model.Person;
 import life.qbic.userdb.model.Person.PersonBuilder;
+import life.qbic.userdb.model.ProjectInfo.ProjectInfoBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1550,7 +1551,8 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("project_id");
           String shortName = rs.getString("short_title");
-          res.put(projectID, new life.qbic.userdb.model.ProjectInfo(space, project, "", shortName, id));
+          ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(space, project, "", shortName).withId(id);
+          res.put(projectID, infoBuilder.getProjectInfo());
         }
         // setting person for different role rows
         life.qbic.userdb.model.ProjectInfo info = res.get(projectID);
@@ -1590,7 +1592,8 @@ public class DBManager {
           String space = openbisIDSplit[1];
           int id = rs.getInt("id");
           String shortName = rs.getString("short_title");
-          res.put(projID, new life.qbic.userdb.model.ProjectInfo(space, project, "", shortName, id));
+          ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(space, project, "", shortName).withId(id);
+          res.put(projID, infoBuilder.getProjectInfo());
         } catch (Exception e) {
           logger.error("Could not parse project from openbis identifier " + projID
               + ". It seems this database entry is incorrect. Ignoring project.");

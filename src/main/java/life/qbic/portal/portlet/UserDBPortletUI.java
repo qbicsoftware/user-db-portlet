@@ -40,6 +40,7 @@ import life.qbic.userdb.DBManager;
 import life.qbic.userdb.model.Person;
 import life.qbic.userdb.model.Person.PersonBuilder;
 import life.qbic.userdb.model.ProjectInfo;
+import life.qbic.userdb.model.ProjectInfo.ProjectInfoBuilder;
 import life.qbic.userdb.views.AffiliationInput;
 import life.qbic.userdb.views.AffiliationVIPTab;
 import life.qbic.userdb.views.MultiAffiliationTab;
@@ -179,8 +180,10 @@ public class UserDBPortletUI extends QBiCPortletUI {
         desc = desc.replaceAll("\n+", ". ");
         String projectID = p.getIdentifier().getIdentifier();
         String code = p.getCode();
-        if (dbProjects.get(projectID) == null)
-          userProjects.put(projectID, new ProjectInfo(p.getSpace().getCode(), code, desc, "", -1));
+        if (dbProjects.get(projectID) == null) {
+          ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(p.getSpace().getCode(), code, desc, "").withId(-1);
+          userProjects.put(projectID, infoBuilder.getProjectInfo());
+        }
         else {
           ProjectInfo info = dbProjects.get(projectID);
           info.setDescription(desc);

@@ -44,6 +44,7 @@ import life.qbic.portal.portlet.ProjectFilterDecorator;
 import life.qbic.portal.portlet.ProjectFilterGenerator;
 import life.qbic.userdb.model.Person;
 import life.qbic.userdb.model.ProjectInfo;
+import life.qbic.userdb.model.ProjectInfo.ProjectInfoBuilder;
 import life.qbic.utils.TimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -383,8 +384,8 @@ public class ProjectView extends VerticalLayout {
     boolean update = !oldName.equals(newName) || updatePI || updateContact || updateManager;
     if (update) {
       // initProjectInfos(projectMap.values());
-      ProjectInfo newInfo =
-          new ProjectInfo(p.getSpace(), code, p.getDescription(), newName, p.getProjectID());
+      ProjectInfoBuilder infoBuilder = new ProjectInfoBuilder().createProjectInfo(p.getSpace(), code, p.getDescription(), newName).withId(p.getProjectID());
+      ProjectInfo newInfo = infoBuilder.getProjectInfo();
       if (newPIName != null)
         newInfo.setInvestigator(personMap.get(newPIName.toString()));
       else
